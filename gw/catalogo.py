@@ -24,9 +24,12 @@ def carrega(caminho: Path | None = None) -> dict:
 
 
 def provedor_ativo(p: dict) -> bool:
-    if p.get("api_base_env"):
-        return bool(os.environ.get(p["api_base_env"]))
-    return bool(p.get("chave") and os.environ.get(p["chave"]))
+    """Ativo quando tem o que precisa: URL por env (local, Cloudflare) e/ou chave."""
+    if p.get("api_base_env") and not os.environ.get(p["api_base_env"]):
+        return False
+    if p.get("chave"):
+        return bool(os.environ.get(p["chave"]))
+    return bool(p.get("api_base_env"))
 
 
 def nome_deployment(item: dict) -> str:
@@ -95,12 +98,8 @@ def contexto_anunciado(cat: dict, rota: str, ativos: list[dict] | None = None) -
 def params_litellm(item: dict) -> dict[str, Any]:
     p = item["_provedor"]
     params: dict[str, Any] = {"model": f"{p['prefixo']}/{item['id']}"}
-    if p.get("api_base_env"):
-        params["api_base"] = os.environ[p["api_base_env"]]
-        params["api_key"] = "local"
-    else:
-        params["api_base"] = p["api_base"]
-        params["api_key"] = f"os.environ/{p['chave']}"
+    params["api_base"] = os.environ[p["api_base_env"]] if p.get("api_base_env") else p["api_base"]
+    params["api_key"] = f"os.environ/{p['chave']}" if p.get("chave") else "local"
     if item.get("rpm") or p.get("rpm"):
         params["rpm"] = item.get("rpm") or p.get("rpm")
     # Tier grátis às vezes aceita a conexão e não manda token (fila): timeout curto.

@@ -50,6 +50,41 @@ provedores:
     cadastro: https://cloud.cerebras.ai
     rpm: 30
     velocidade: 0.9
+  # --- adicionados 05/11/2026 (pesquisa de planos grátis; sem chave no .env = fora, sem erro)
+  gemini:
+    # Google AI Studio, endpoint compatível com OpenAI. Sem cartão, funciona no Brasil.
+    # Limite não publicado (aparece no AI Studio por projeto); grátis usa os dados (a máscara cobre).
+    prefixo: openai
+    chave: GW_GEMINI_KEY
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai/
+    cadastro: https://aistudio.google.com/apikey
+  zai:
+    # Z.ai: glm-4.7-flash grátis por token. Usar a chave da API padrão (não a do Coding Plan).
+    prefixo: openai
+    chave: GW_ZAI_KEY
+    api_base: https://api.z.ai/api/paas/v4
+    cadastro: https://z.ai/manage-apikey/apikey-list
+  cloudflare:
+    # Workers AI: 10.000 neurons/dia (zera 00:00 UTC). URL leva o account id:
+    # GW_CLOUDFLARE_URL=https://api.cloudflare.com/client/v4/accounts/<account_id>/ai/v1
+    prefixo: openai
+    chave: GW_CLOUDFLARE_KEY
+    api_base_env: GW_CLOUDFLARE_URL
+    cadastro: https://dash.cloudflare.com/profile/api-tokens
+  mistral:
+    # Free mode: sem cartão. Limite e modelos liberados só no painel (Admin > API > Limits).
+    # Desligar treino em Admin > Privacy.
+    prefixo: mistral
+    chave: GW_MISTRAL_KEY
+    api_base: https://api.mistral.ai/v1
+    cadastro: https://console.mistral.ai/api-keys
+  llm7:
+    # Token grátis: 60 RPM, 100k tokens/24h. Reserva.
+    prefixo: openai
+    chave: GW_LLM7_KEY
+    api_base: https://api.llm7.io/v1
+    cadastro: https://token.llm7.io
+    rpm: 60
   local:
     # llamafile/servidor local já rodando; o gateway NÃO sobe modelo.
     prefixo: openai
@@ -85,6 +120,19 @@ pool:
   # --- Cerebras (entra quando tiver chave)
   - {provedor: cerebras, id: "gpt-oss-120b", ref: gpt-oss-120b, contexto: 131072}
   # --- local (opcional)
+  # --- Google AI Studio (05/11)
+  - {provedor: gemini, id: "gemini-3.8-flash", ref: gemini-3.8-flash, contexto: 1048576, visao: true}
+  - {provedor: gemini, id: "gemini-3.5-flash-lite", ref: gemini-3.5-flash-lite, contexto: 1048576, visao: true}
+  # --- Z.ai (05/11): fora do catálogo Routeway, nota manual
+  - {provedor: zai, id: "glm-4.7-flash", nota: 60, contexto: 200000}
+  # --- Cloudflare Workers AI (05/11)
+  - {provedor: cloudflare, id: "@cf/zai-org/glm-4.7-flash", nota: 60, contexto: 131072}
+  - {provedor: cloudflare, id: "@cf/openai/gpt-oss-120b", ref: gpt-oss-120b, contexto: 128000}
+  # --- Mistral Free (05/11): quais o Free libera, só testando
+  - {provedor: mistral, id: "devstral-latest", ref: devstral-2512, contexto: 256000}
+  - {provedor: mistral, id: "mistral-small-latest", nota: 45, contexto: 262144}
+  # --- LLM7 (05/11): tool call testada pela pesquisa
+  - {provedor: llm7, id: "DeepSeek-V4-Flash-0731", ref: deepseek-v4-flash-0731, contexto: 400000}
   - {provedor: local, id_env: GW_LOCAL_MODELO, nota: 20, contexto: 32768}
 
 # Rotas que os agentes chamam no campo "model".

@@ -277,3 +277,24 @@ def test_tira_raciocinio_das_mensagens_do_assistente():
 def test_tira_raciocinio_aguenta_lixo():
     assert rt.tira_raciocinio_do_historico(None) == 0
     assert rt.tira_raciocinio_do_historico(["texto solto", {"role": "assistant"}]) == 0
+
+
+# --- provedor com chave E url por env (Cloudflare: token + id da conta na URL)
+def test_provedor_com_chave_e_url_por_env(monkeypatch):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "gw"))
+    import catalogo
+
+    p = {"prefixo": "openai", "chave": "GW_CF_KEY", "api_base_env": "GW_CF_URL"}
+    monkeypatch.delenv("GW_CF_KEY", raising=False)
+    monkeypatch.setenv("GW_CF_URL", "https://cf.exemplo/v1")
+    assert not catalogo.provedor_ativo(p)            # sem chave: fora
+    monkeypatch.setenv("GW_CF_KEY", "k")
+    monkeypatch.delenv("GW_CF_URL")
+    assert not catalogo.provedor_ativo(p)            # sem url: fora
+    monkeypatch.setenv("GW_CF_URL", "https://cf.exemplo/v1")
+    assert catalogo.provedor_ativo(p)
+    params = catalogo.params_litellm({"id": "m", "_provedor": p})
+    assert params["api_base"] == "https://cf.exemplo/v1" and params["api_key"] == "os.environ/GW_CF_KEY"
+    local = {"prefixo": "openai", "chave": None, "api_base_env": "GW_LOCAL_URL"}
+    monkeypatch.setenv("GW_LOCAL_URL", "http://127.0.0.1:8080/v1")
+    assert catalogo.provedor_ativo(local) and catalogo.params_litellm({"id": "m", "_provedor": local})["api_key"] == "local"

@@ -1,6 +1,6 @@
 {
  "fonte": "benchmarks do catálogo Routeway (api.routeway.ai/v1/models)",
- "gerado_em": "2026-11-03T17:02:53+00:00",
+ "gerado_em": "2026-11-05T16:51:33+00:00",
  "metodo": "cada benchmark normalizado entre o pior e o melhor do pool; nota = média × 100",
  "benchmarks": {
   "hle": "Humanity's Last Exam (raciocínio difícil)",
@@ -12,16 +12,42 @@
   "terminalbench_v2_1": "Terminal-Bench 2.1 (agente no terminal)"
  },
  "modelos": {
+  "deepseek-v4-flash-0731": {
+   "nota": 83.4,
+   "componentes": {
+    "hle": {
+     "valor": 0.386,
+     "norm": 0.788
+    },
+    "scicode": {
+     "valor": 0.503,
+     "norm": 0.735
+    },
+    "lcr": {
+     "valor": 0.797,
+     "norm": 0.916
+    },
+    "gpqa": {
+     "valor": 0.908,
+     "norm": 0.875
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.787,
+     "norm": 0.854
+    }
+   },
+   "no_catalogo": true
+  },
   "deepseek-v4.1-flash": {
-   "nota": 89.5,
+   "nota": 86.8,
    "componentes": {
     "hle": {
      "valor": 0.392,
-     "norm": 0.762
+     "norm": 0.802
     },
     "scicode": {
      "valor": 0.519,
-     "norm": 0.923
+     "norm": 0.803
     },
     "lcr": {
      "valor": 0.84,
@@ -30,92 +56,178 @@
    },
    "no_catalogo": true
   },
+  "devstral-2512": {
+   "nota": 1.0,
+   "componentes": {
+    "hle": {
+     "valor": 0.036,
+     "norm": 0.0
+    },
+    "scicode": {
+     "valor": 0.328,
+     "norm": 0.0
+    },
+    "lcr": {
+     "valor": 0.323,
+     "norm": 0.0
+    },
+    "gpqa": {
+     "valor": 0.594,
+     "norm": 0.0
+    },
+    "tau2": {
+     "valor": 0.249,
+     "norm": 0.0
+    },
+    "ifbench": {
+     "valor": 0.381,
+     "norm": 0.0
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.303,
+     "norm": 0.067
+    }
+   },
+   "no_catalogo": true
+  },
+  "gemini-3.5-flash-lite": {
+   "nota": 53.4,
+   "componentes": {
+    "hle": {
+     "valor": 0.188,
+     "norm": 0.342
+    },
+    "scicode": {
+     "valor": 0.413,
+     "norm": 0.357
+    },
+    "lcr": {
+     "valor": 0.76,
+     "norm": 0.845
+    },
+    "gpqa": {
+     "valor": 0.838,
+     "norm": 0.68
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.536,
+     "norm": 0.445
+    }
+   },
+   "no_catalogo": true
+  },
+  "gemini-3.8-flash": {
+   "nota": 98.9,
+   "componentes": {
+    "hle": {
+     "valor": 0.478,
+     "norm": 0.995
+    },
+    "scicode": {
+     "valor": 0.566,
+     "norm": 1.0
+    },
+    "lcr": {
+     "valor": 0.813,
+     "norm": 0.948
+    },
+    "gpqa": {
+     "valor": 0.953,
+     "norm": 1.0
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.876,
+     "norm": 1.0
+    }
+   },
+   "no_catalogo": true
+  },
   "gemma-4-31b-it": {
-   "nota": 53.0,
+   "nota": 59.8,
    "componentes": {
     "hle": {
      "valor": 0.236,
-     "norm": 0.339
+     "norm": 0.45
     },
     "scicode": {
      "valor": 0.455,
-     "norm": 0.593
+     "norm": 0.534
     },
     "lcr": {
      "valor": 0.697,
-     "norm": 0.693
+     "norm": 0.723
     },
     "gpqa": {
      "valor": 0.857,
-     "norm": 0.645
+     "norm": 0.733
     },
     "tau2": {
      "valor": 0.599,
-     "norm": 0.385
+     "norm": 0.6
     },
     "ifbench": {
      "valor": 0.756,
-     "norm": 0.757
+     "norm": 0.866
     },
     "terminalbench_v2_1": {
      "valor": 0.434,
-     "norm": 0.297
+     "norm": 0.28
     }
    },
    "no_catalogo": true
   },
   "glm-5.3-flash": {
-   "nota": 92.0,
+   "nota": 87.2,
    "componentes": {
     "hle": {
      "valor": 0.399,
-     "norm": 0.78
+     "norm": 0.818
     },
     "scicode": {
      "valor": 0.516,
-     "norm": 0.907
+     "norm": 0.79
     },
     "lcr": {
      "valor": 0.8,
-     "norm": 0.914
+     "norm": 0.923
     },
     "gpqa": {
      "valor": 0.912,
-     "norm": 1.0
+     "norm": 0.886
     },
     "terminalbench_v2_1": {
      "valor": 0.843,
-     "norm": 1.0
+     "norm": 0.945
     }
    },
    "no_catalogo": true
   },
   "gpt-oss-120b": {
-   "nota": 23.9,
+   "nota": 39.0,
    "componentes": {
     "hle": {
      "valor": 0.196,
-     "norm": 0.23
+     "norm": 0.36
     },
     "scicode": {
      "valor": 0.34,
-     "norm": 0.0
+     "norm": 0.05
     },
     "lcr": {
      "valor": 0.52,
-     "norm": 0.314
+     "norm": 0.381
     },
     "gpqa": {
      "valor": 0.782,
-     "norm": 0.161
+     "norm": 0.524
     },
     "tau2": {
      "valor": 0.658,
-     "norm": 0.485
+     "norm": 0.7
     },
     "ifbench": {
      "valor": 0.69,
-     "norm": 0.48
+     "norm": 0.714
     },
     "terminalbench_v2_1": {
      "valor": 0.262,
@@ -124,42 +236,8 @@
    },
    "no_catalogo": true
   },
-  "kimi-k2.6": {
-   "nota": 85.8,
-   "componentes": {
-    "hle": {
-     "valor": 0.375,
-     "norm": 0.715
-    },
-    "scicode": {
-     "valor": 0.515,
-     "norm": 0.902
-    },
-    "lcr": {
-     "valor": 0.81,
-     "norm": 0.936
-    },
-    "gpqa": {
-     "valor": 0.911,
-     "norm": 0.994
-    },
-    "tau2": {
-     "valor": 0.959,
-     "norm": 1.0
-    },
-    "ifbench": {
-     "valor": 0.76,
-     "norm": 0.774
-    },
-    "terminalbench_v2_1": {
-     "valor": 0.659,
-     "norm": 0.684
-    }
-   },
-   "no_catalogo": true
-  },
   "minimax-m3.1-flash": {
-   "nota": 96.9,
+   "nota": 92.7,
    "componentes": {
     "hle": {
      "valor": 0.48,
@@ -167,63 +245,63 @@
     },
     "scicode": {
      "valor": 0.534,
-     "norm": 1.0
+     "norm": 0.866
     },
     "lcr": {
      "valor": 0.797,
-     "norm": 0.907
+     "norm": 0.916
     }
    },
    "no_catalogo": true
   },
   "muse-glimmer-30b": {
-   "nota": 55.7,
+   "nota": 59.9,
    "componentes": {
     "hle": {
      "valor": 0.22,
-     "norm": 0.295
+     "norm": 0.414
     },
     "scicode": {
      "valor": 0.449,
-     "norm": 0.562
+     "norm": 0.508
     },
     "lcr": {
      "valor": 0.833,
-     "norm": 0.986
+     "norm": 0.987
     },
     "gpqa": {
      "valor": 0.835,
-     "norm": 0.503
+     "norm": 0.671
     },
     "terminalbench_v2_1": {
      "valor": 0.517,
-     "norm": 0.439
+     "norm": 0.415
     }
    },
    "no_catalogo": true
   },
   "nemotron-3-ultra-550b-a55b": {
-   "nota": 66.7,
+   "nota": 71.4,
    "componentes": {
     "hle": {
      "valor": 0.284,
-     "norm": 0.469
+     "norm": 0.559
     },
     "scicode": {
      "valor": 0.403,
-     "norm": 0.325
+     "norm": 0.315
     },
     "lcr": {
      "valor": 0.793,
-     "norm": 0.9
+     "norm": 0.91
     },
     "gpqa": {
      "valor": 0.867,
-     "norm": 0.71
+     "norm": 0.76
     },
     "tau2": {
      "valor": 0.833,
-     "norm": 0.785
+     "norm": 1.0
     },
     "ifbench": {
      "valor": 0.814,
@@ -231,67 +309,67 @@
     },
     "terminalbench_v2_1": {
      "valor": 0.539,
-     "norm": 0.477
+     "norm": 0.451
     }
    },
    "no_catalogo": true
   },
   "north-mini-code": {
-   "nota": 5.8,
+   "nota": 25.6,
    "componentes": {
     "hle": {
      "valor": 0.111,
-     "norm": 0.0
+     "norm": 0.169
     },
     "scicode": {
      "valor": 0.388,
-     "norm": 0.247
+     "norm": 0.252
     },
     "lcr": {
      "valor": 0.373,
-     "norm": 0.0
+     "norm": 0.097
     },
     "gpqa": {
      "valor": 0.757,
-     "norm": 0.0
+     "norm": 0.454
     },
     "tau2": {
      "valor": 0.374,
-     "norm": 0.0
+     "norm": 0.215
     },
     "ifbench": {
      "valor": 0.576,
-     "norm": 0.0
+     "norm": 0.45
     },
     "terminalbench_v2_1": {
      "valor": 0.356,
-     "norm": 0.161
+     "norm": 0.152
     }
    },
    "no_catalogo": true
   },
   "qwen3.8-27b": {
-   "nota": 82.0,
+   "nota": 79.2,
    "componentes": {
     "hle": {
      "valor": 0.339,
-     "norm": 0.618
+     "norm": 0.682
     },
     "scicode": {
      "valor": 0.466,
-     "norm": 0.649
+     "norm": 0.58
     },
     "lcr": {
      "valor": 0.82,
-     "norm": 0.957
+     "norm": 0.961
     },
     "gpqa": {
      "valor": 0.905,
-     "norm": 0.955
+     "norm": 0.866
     },
     "terminalbench_v2_1": {
      "valor": 0.798,
-     "norm": 0.923
+     "norm": 0.872
     }
    },
    "no_catalogo": true
