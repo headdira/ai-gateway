@@ -257,3 +257,23 @@ def test_contexto_anunciado_da_rota():
     assert catalogo.contexto_anunciado(cat, "longo", ativos) == 1_000_000  # sem config: o maior da rota
     assert catalogo.contexto_anunciado(cat, "vazia", ativos) is None
     assert catalogo.contexto_anunciado(cat, "nao-existe", ativos) is None
+
+
+# --- raciocínio no histórico (05/11): a Groq recusa `reasoning_content` em mensagem de assistente
+def test_tira_raciocinio_das_mensagens_do_assistente():
+    msgs = [
+        {"role": "user", "content": "oi"},
+        {"role": "assistant", "content": "olá", "reasoning_content": "pensei", "reasoning": "x",
+         "thinking_blocks": [{"t": 1}], "reasoning_details": [{"t": 2}]},
+        {"role": "assistant", "content": None, "tool_calls": [{"id": "c1"}], "reasoning_content": "y"},
+        {"role": "tool", "tool_call_id": "c1", "content": "ok"},
+    ]
+    assert rt.tira_raciocinio_do_historico(msgs) == 2
+    assert msgs[1] == {"role": "assistant", "content": "olá"}
+    assert msgs[2] == {"role": "assistant", "content": None, "tool_calls": [{"id": "c1"}]}
+    assert msgs[0] == {"role": "user", "content": "oi"} and msgs[3]["content"] == "ok"
+
+
+def test_tira_raciocinio_aguenta_lixo():
+    assert rt.tira_raciocinio_do_historico(None) == 0
+    assert rt.tira_raciocinio_do_historico(["texto solto", {"role": "assistant"}]) == 0

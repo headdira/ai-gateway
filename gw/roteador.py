@@ -180,6 +180,27 @@ def tool_call_em_texto(texto: str | None) -> bool:
     return bool(texto) and _RX_TOOL_EM_TEXTO.search(texto) is not None
 
 
+# Campos de raciocínio que agentes (ex.: Hermes) guardam na mensagem do assistente e
+# devolvem no turno seguinte. A Groq recusa com 400 ("property 'reasoning_content' is
+# unsupported", 05/11) e, como o gateway troca de modelo a cada pedido, o raciocínio de
+# outro modelo não serve para o próximo. Por isso sai do histórico antes de ir ao provedor.
+CAMPOS_RACIOCINIO = ("reasoning_content", "reasoning", "thinking_blocks", "reasoning_details")
+
+
+def tira_raciocinio_do_historico(mensagens: Any) -> int:
+    """Remove os campos de raciocínio das mensagens de assistente. Devolve quantas mudou."""
+    if not isinstance(mensagens, list):
+        return 0
+    mudou = 0
+    for m in mensagens:
+        if isinstance(m, dict) and m.get("role") == "assistant":
+            achou = [c for c in CAMPOS_RACIOCINIO if c in m]
+            for c in achou:
+                del m[c]
+            mudou += bool(achou)
+    return mudou
+
+
 def necessidades(data: dict) -> dict:
     """O que o pedido exige, só por fatos do próprio pedido."""
     mensagens = data.get("messages") or []

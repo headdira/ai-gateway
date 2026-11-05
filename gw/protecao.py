@@ -132,6 +132,7 @@ class Protecao(CustomLogger):
 
         if contagem and call_type in CHAMADAS_CHAT and isinstance(data.get("messages"), list):
             self._injeta_aviso(data["messages"])
+        rt.tira_raciocinio_do_historico(data.get("messages"))
 
         meta_chave = "litellm_metadata" if isinstance(data.get("litellm_metadata"), dict) else "metadata"
         meta = data.get(meta_chave)
