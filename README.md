@@ -178,6 +178,6 @@ O `GET /v1/models` mostra cada rota com o `contexto_anunciado` do `modelos.yaml`
 
 ## Licença
 
-[PolyForm Noncommercial 1.0.0](LICENSE). Pode usar, estudar, modificar e redistribuir para uso pessoal, pesquisa, ensino e organizações sem fins lucrativos. **Uso comercial não é permitido** (vender, oferecer como serviço pago ou usar para fins comerciais). Para uso comercial, fale com o autor. Não é uma licença open source no sentido da OSI: é código aberto para consulta, sem uso comercial.
+[PolyForm Noncommercial 1.0.0](LICENSE) (aviso de copyright em [NOTICE](NOTICE)). Pode usar, estudar, modificar e redistribuir para uso pessoal, pesquisa, ensino e organizações sem fins lucrativos. **Uso comercial não é permitido** (vender, oferecer como serviço pago ou usar para fins comerciais). Para uso comercial, fale com o autor. Não é uma licença open source no sentido da OSI: é código aberto para consulta, sem uso comercial.
 
 Os provedores, o LiteLLM, o hermes-agent e os modelos têm licenças próprias.
