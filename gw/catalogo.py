@@ -27,6 +27,8 @@ def provedor_ativo(p: dict) -> bool:
     """Ativo quando tem o que precisa: URL por env (local, Cloudflare) e/ou chave."""
     if p.get("api_base_env") and not os.environ.get(p["api_base_env"]):
         return False
+    if p.get("anonimo"):  # aceita chamada sem conta; a chave, se houver, só aumenta a cota
+        return True
     if p.get("chave"):
         return bool(os.environ.get(p["chave"]))
     return bool(p.get("api_base_env"))
@@ -99,7 +101,16 @@ def params_litellm(item: dict) -> dict[str, Any]:
     p = item["_provedor"]
     params: dict[str, Any] = {"model": f"{p['prefixo']}/{item['id']}"}
     params["api_base"] = os.environ[p["api_base_env"]] if p.get("api_base_env") else p["api_base"]
-    params["api_key"] = f"os.environ/{p['chave']}" if p.get("chave") else "local"
+    if p.get("chave") and os.environ.get(p["chave"]):
+        params["api_key"] = f"os.environ/{p['chave']}"
+    elif p.get("anonimo"):
+        # O Kilo valida qualquer Bearer quando o pedido vem de SDK (User-Agent OpenAI/x-stainless)
+        # e devolve 401; sem Authorization ele trata como anônimo. O SDK exige api_key, então o
+        # cabeçalho sai vazio por cima (testado 05/11).
+        params["api_key"] = "anonimo"
+        params["extra_headers"] = {"Authorization": ""}
+    else:
+        params["api_key"] = "local"
     if item.get("rpm") or p.get("rpm"):
         params["rpm"] = item.get("rpm") or p.get("rpm")
     # Tier grátis às vezes aceita a conexão e não manda token (fila): timeout curto.

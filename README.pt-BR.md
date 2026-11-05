@@ -34,13 +34,21 @@ python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ./parar.sh                           # para pelo PID que o subir.sh gravou
 ```
 
-| Provedor | Chave | O que dá de graça |
-|---|---|---|
-| Routeway | https://routeway.ai/dashboard/keys | DeepSeek V4.1 Flash, MiniMax M3.1 Flash, Muse Glimmer (200/dia) |
-| NVIDIA NIM | https://build.nvidia.com/settings/api-keys | DeepSeek V4.1 Flash (40/min) |
-| OpenRouter | https://openrouter.ai/settings/keys | 14 modelos `:free` (50/dia; 1.000/dia com US$10 de crédito) |
-| Groq | https://console.groq.com/keys | gpt-oss-120b |
-| Cerebras | https://cloud.cerebras.ai | gpt-oss-120b |
+Provedores grátis (pesquisa de novembro de 2026: só plano grátis usável no dia a dia, nada de trial que expira):
+
+| Provedor | Chave | O que dá de graça | Situação aqui |
+|---|---|---|---|
+| **Kilo Gateway** | **não precisa** (chave opcional aumenta o limite) | Nemotron 3 Ultra 550B, Reflection Beam, Nemotron 3.5 Lightning / Super VL, todos com 1M de contexto · 200 pedidos/hora por IP | ✅ tool call provada |
+| Groq | https://console.groq.com/keys | Qwen 3.8 27B, gpt-oss-120b · ~1.000 pedidos/dia por modelo | ✅ provado |
+| NVIDIA NIM | https://build.nvidia.com/settings/api-keys | DeepSeek V4.1, GLM 5.3, MiniMax M3.1, Nemotron, Gemma 4 · ~40/min | ✅ provado |
+| Routeway | https://routeway.ai/dashboard/keys | DeepSeek V4.1 Flash, MiniMax M3.1, Muse Glimmer · 200/dia | ✅ provado |
+| OpenRouter | https://openrouter.ai/settings/keys | modelos `:free` · 50/dia (1.000/dia depois de comprar US$10 uma vez) | ✅ provado |
+| Google AI Studio | https://aistudio.google.com/apikey | Gemini 3.8 Flash (maior nota do pool), Gemma 4 31B · limite só no console | configurado, falta chave |
+| Z.ai | https://z.ai/manage-apikey/apikey-list | GLM-4.7-Flash, grátis por token | configurado, falta chave |
+| Cloudflare Workers AI | token + account id | GLM-4.7-Flash, gpt-oss-120b · 10 mil neurons/dia | configurado, falta chave |
+| Hetzner Inference | https://experiments.hetzner.com/inference | Qwen 3.8 27B, Qwen 3.6 35B · experimental, 10/min | configurado, falta chave |
+
+A Cerebras continua funcionando se você tiver chave, mas deixou de ser grátis (virou trial com cartão). Depois de colar uma chave: `testar_provedores.py --sondar --provedor <nome>` faz 1 chamada por modelo e prova a tool call.
 
 Provedor sem chave no `.env` fica fora da config, sem erro.
 

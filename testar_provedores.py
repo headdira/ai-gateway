@@ -49,11 +49,12 @@ def confere_catalogos(cat: dict) -> int:
         if p.get("api_base_env"):
             continue
         chave = os.environ.get(p.get("chave") or "", "")
-        if not chave:
+        if not chave and not p.get("anonimo"):
             print(f"-  {nome:11} sem chave ({p['chave']}) → cadastro: {p.get('cadastro')}")
             continue
+        cab = {"Authorization": f"Bearer {chave}"} if chave else {}
         try:
-            r = httpx.get(f"{p['api_base'].rstrip('/')}/models", headers={"Authorization": f"Bearer {chave}"}, timeout=30)
+            r = httpx.get(f"{p['api_base'].rstrip('/')}/models", headers=cab, timeout=30)
         except httpx.HTTPError as e:
             print(f"✗  {nome:11} sem conexão: {e}")
             problemas += 1
@@ -63,7 +64,7 @@ def confere_catalogos(cat: dict) -> int:
             problemas += 1
             continue
         ids = {m.get("id") for m in (r.json().get("data") or [])} if r.status_code == 200 else set()
-        print(f"✓  {nome:11} chave ok ({len(ids)} modelos no catálogo)")
+        print(f"✓  {nome:11} {'chave ok' if chave else 'sem conta (anônimo)'} ({len(ids)} modelos no catálogo)")
         for item in cat["pool"]:
             if item["provedor"] != nome or not item.get("id"):
                 continue
@@ -119,9 +120,9 @@ def sonda(item: dict, base: str, cab: dict) -> str:
     return f"  ✓ {item['nome']:50} {dt:5.1f} s  {tools}"
 
 
-def sondar(cat: dict) -> int:
+def sondar(cat: dict, provedor: str | None = None) -> int:
     base, cab = base_e_cabecalho()
-    itens = [i for i in catalogo.itens_ativos(cat) if i["provedor"] != "local"]
+    itens = [i for i in catalogo.itens_ativos(cat) if i["provedor"] != "local" and provedor in (None, i["provedor"])]
     print(f"\nSondagem: 1 chamada por modelo ({len(itens)} modelos, 4 por vez) via {base}")
     with ThreadPoolExecutor(max_workers=4) as ex:
         for linha in ex.map(lambda i: sonda(i, base, cab), itens):
@@ -134,12 +135,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--chat", action="store_true")
     ap.add_argument("--sondar", action="store_true")
+    ap.add_argument("--provedor", help="sonda só este provedor (ex.: kilo)")
     a = ap.parse_args()
     carrega_env()
     cat = catalogo.carrega()
     problemas = confere_catalogos(cat)
     if a.sondar:
-        problemas += sondar(cat)
+        problemas += sondar(cat, a.provedor)
     if a.chat:
         problemas += chat_por_rota(cat)
     return 1 if problemas else 0

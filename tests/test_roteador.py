@@ -298,3 +298,18 @@ def test_provedor_com_chave_e_url_por_env(monkeypatch):
     local = {"prefixo": "openai", "chave": None, "api_base_env": "GW_LOCAL_URL"}
     monkeypatch.setenv("GW_LOCAL_URL", "http://127.0.0.1:8080/v1")
     assert catalogo.provedor_ativo(local) and catalogo.params_litellm({"id": "m", "_provedor": local})["api_key"] == "local"
+
+
+# --- provedor que aceita chamada sem conta (Kilo Gateway: modelos :free sem chave, 05/11)
+def test_provedor_anonimo_usa_chave_se_tiver(monkeypatch):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "gw"))
+    import catalogo
+
+    p = {"prefixo": "openai", "chave": "GW_KILO_KEY", "anonimo": True, "api_base": "https://kilo.exemplo/v1"}
+    monkeypatch.delenv("GW_KILO_KEY", raising=False)
+    assert catalogo.provedor_ativo(p)
+    anon = catalogo.params_litellm({"id": "m", "_provedor": p})
+    assert anon["api_key"] == "anonimo" and anon["extra_headers"] == {"Authorization": ""}
+    monkeypatch.setenv("GW_KILO_KEY", "k")
+    com_chave = catalogo.params_litellm({"id": "m", "_provedor": p})
+    assert com_chave["api_key"] == "os.environ/GW_KILO_KEY" and "extra_headers" not in com_chave

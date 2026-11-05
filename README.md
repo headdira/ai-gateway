@@ -55,15 +55,21 @@ python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
 open http://127.0.0.1:4000/painel
 ```
 
-Free keys (any subset works, providers without a key are just skipped):
+Free providers (any subset works; a provider without a key is just skipped). Researched in November 2026: only free tiers that are usable day to day, no expiring trials.
 
-| Provider | Get a key | What's free |
-|---|---|---|
-| Groq | [console.groq.com/keys](https://console.groq.com/keys) | Qwen 3.8, gpt-oss-120b (fast) |
-| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com/settings/api-keys) | DeepSeek V4.1, GLM 5.3, MiniMax M3.1, Nemotron, Gemma |
-| Routeway | [routeway.ai](https://routeway.ai/dashboard/keys) | DeepSeek V4.1 Flash, MiniMax, Muse Glimmer |
-| OpenRouter | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) | `:free` models |
-| Cerebras | [cloud.cerebras.ai](https://cloud.cerebras.ai) | gpt-oss-120b |
+| Provider | Key | What's free | Status here |
+|---|---|---|---|
+| **Kilo Gateway** | **none needed** (optional key raises the limit) | Nemotron 3 Ultra 550B, Reflection Beam, Nemotron 3.5 Lightning / Super VL, all 1M context · 200 req/hour per IP | ✅ tool calls proven |
+| Groq | [console.groq.com/keys](https://console.groq.com/keys) | Qwen 3.8 27B, gpt-oss-120b · ~1,000 req/day per model | ✅ proven |
+| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com/settings/api-keys) | DeepSeek V4.1, GLM 5.3, MiniMax M3.1, Nemotron, Gemma 4 · ~40 req/min | ✅ proven |
+| Routeway | [routeway.ai](https://routeway.ai/dashboard/keys) | DeepSeek V4.1 Flash, MiniMax M3.1, Muse Glimmer · 200 req/day | ✅ proven |
+| OpenRouter | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) | `:free` models · 50 req/day (1,000/day after a one-time $10 top-up) | ✅ proven |
+| Google AI Studio | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Gemini 3.8 Flash (best benchmark score in the pool), Gemma 4 31B · limits shown in your console | configured, bring a key |
+| Z.ai | [z.ai](https://z.ai/manage-apikey/apikey-list) | GLM-4.7-Flash, free per token | configured, bring a key |
+| Cloudflare Workers AI | [API token](https://dash.cloudflare.com/profile/api-tokens) + account id | GLM-4.7-Flash, gpt-oss-120b · 10k neurons/day | configured, bring a key |
+| Hetzner Inference | [experiments.hetzner.com](https://experiments.hetzner.com/inference) | Qwen 3.8 27B, Qwen 3.6 35B · experimental, 10 req/min | configured, bring a key |
+
+Cerebras still works if you have a key, but it stopped being free (now a card-backed trial). After adding keys, `testar_provedores.py --sondar --provedor <name>` makes one call per model and proves tool calling before the router trusts it.
 
 ## Use it from anything that speaks OpenAI
 
@@ -88,6 +94,8 @@ Routes you can ask for in `model`:
 | `visao` | quality, vision models | images need `GW_IMAGENS=permitir` |
 
 Or pin a model: `"model": "m:groq/qwen/qwen3.8-27b"` (masking still applies).
+
+**Reasoning fields** that agents echo back in the history (`reasoning_content`, `thinking_blocks`…) are stripped before the call, so switching models mid-conversation never breaks on a provider that rejects them.
 
 **Agents:** works with [Hermes](https://github.com/NousResearch/hermes-agent) (`provider: custom`, `base_url: http://127.0.0.1:4000/v1`, `default: geral`) and anything else that uses Chat Completions. The dashboard even has a built-in **Chat** tab that runs Hermes through the gateway, with every dangerous command waiting for your approval.
 

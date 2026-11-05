@@ -44,6 +44,7 @@ provedores:
     rpm: 30
     velocidade: 0.9   # palpite inicial até medir (Groq é LPU)
   cerebras:
+    # 07/2026: deixou de ser grátis (trial de US$5 com cartão, 30 dias). Fica só se você tiver chave.
     prefixo: cerebras
     chave: GW_CEREBRAS_KEY
     api_base: https://api.cerebras.ai/v1
@@ -71,20 +72,22 @@ provedores:
     chave: GW_CLOUDFLARE_KEY
     api_base_env: GW_CLOUDFLARE_URL
     cadastro: https://dash.cloudflare.com/profile/api-tokens
-  mistral:
-    # Free mode: sem cartão. Limite e modelos liberados só no painel (Admin > API > Limits).
-    # Desligar treino em Admin > Privacy.
-    prefixo: mistral
-    chave: GW_MISTRAL_KEY
-    api_base: https://api.mistral.ai/v1
-    cadastro: https://console.mistral.ai/api-keys
-  llm7:
-    # Token grátis: 60 RPM, 100k tokens/24h. Reserva.
+  kilo:
+    # Kilo AI Gateway: modelos :free funcionam SEM conta (200 req/hora por IP, testado 05/11).
+    # GW_KILO_KEY (app.kilo.ai/profile) é opcional e só aumenta a cota.
     prefixo: openai
-    chave: GW_LLM7_KEY
-    api_base: https://api.llm7.io/v1
-    cadastro: https://token.llm7.io
-    rpm: 60
+    chave: GW_KILO_KEY
+    anonimo: true
+    api_base: https://api.kilo.ai/api/gateway
+    cadastro: https://app.kilo.ai/profile
+  hetzner:
+    # Hetzner Inference (experimental, grátis enquanto durar): 10 req/min por chave, 4M tokens
+    # de entrada por minuto. Conta Hetzner (pode pedir cartão, sem cobrança).
+    prefixo: openai
+    chave: GW_HETZNER_KEY
+    api_base: https://inference.hetzner.com/api/v1
+    cadastro: https://experiments.hetzner.com/inference
+    rpm: 10
   local:
     # llamafile/servidor local já rodando; o gateway NÃO sobe modelo.
     prefixo: openai
@@ -122,17 +125,21 @@ pool:
   # --- local (opcional)
   # --- Google AI Studio (05/11)
   - {provedor: gemini, id: "gemini-3.8-flash", ref: gemini-3.8-flash, contexto: 1048576, visao: true}
+  - {provedor: gemini, id: "gemma-4-31b-it", ref: gemma-4-31b-it, contexto: 262144, visao: true}
   - {provedor: gemini, id: "gemini-3.5-flash-lite", ref: gemini-3.5-flash-lite, contexto: 1048576, visao: true}
   # --- Z.ai (05/11): fora do catálogo Routeway, nota manual
   - {provedor: zai, id: "glm-4.7-flash", nota: 60, contexto: 200000}
   # --- Cloudflare Workers AI (05/11)
   - {provedor: cloudflare, id: "@cf/zai-org/glm-4.7-flash", nota: 60, contexto: 131072}
   - {provedor: cloudflare, id: "@cf/openai/gpt-oss-120b", ref: gpt-oss-120b, contexto: 128000}
-  # --- Mistral Free (05/11): quais o Free libera, só testando
-  - {provedor: mistral, id: "devstral-latest", ref: devstral-2512, contexto: 256000}
-  - {provedor: mistral, id: "mistral-small-latest", nota: 45, contexto: 262144}
-  # --- LLM7 (05/11): tool call testada pela pesquisa
-  - {provedor: llm7, id: "DeepSeek-V4-Flash-0731", ref: deepseek-v4-flash-0731, contexto: 400000}
+  # --- Kilo Gateway, sem conta (05/11): tool call testada no Nemotron Ultra e no Beam
+  - {provedor: kilo, id: "nvidia/nemotron-3-ultra-550b-a55b:free", ref: nemotron-3-ultra-550b-a55b, contexto: 1000000}
+  - {provedor: kilo, id: "reflection/beam-free", nota: 50, contexto: 1048576}
+  - {provedor: kilo, id: "nvidia/nemotron-3.5-lightning:free", ref: nemotron-3.5-lightning, contexto: 1000000}
+  - {provedor: kilo, id: "nvidia/nemotron-3.5-super-vl:free", nota: 45, contexto: 1000000, visao: true}
+  # --- Hetzner (05/11): tool call não confirmada, prova na sondagem
+  - {provedor: hetzner, id: "Qwen3.8-27B", ref: qwen3.8-27b, contexto: 262144}
+  - {provedor: hetzner, id: "Qwen/Qwen3.6-35B-A3B-FP8", ref: qwen3.6-35b-a3b, contexto: 262144}
   - {provedor: local, id_env: GW_LOCAL_MODELO, nota: 20, contexto: 32768}
 
 # Rotas que os agentes chamam no campo "model".
