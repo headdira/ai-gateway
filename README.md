@@ -1,183 +1,168 @@
+<p align="center"><img src="docs/img/banner.png" alt="AI Gateway: free LLMs, your data stays home" width="100%"></p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-ff77a8?style=flat-square&labelColor=1d2b53"></a>
+  <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-29adff?style=flat-square&labelColor=1d2b53">
+  <img alt="OpenAI compatible" src="https://img.shields.io/badge/API-OpenAI%20compatible-00e436?style=flat-square&labelColor=1d2b53">
+  <img alt="Cost" src="https://img.shields.io/badge/cost-%240.00-ffec27?style=flat-square&labelColor=1d2b53">
+  <img alt="Runs on localhost" src="https://img.shields.io/badge/runs%20on-127.0.0.1-ffa300?style=flat-square&labelColor=1d2b53">
+</p>
+
+<p align="center">
+  <b>English</b> · <a href="README.pt-BR.md">Português</a>
+</p>
+
 # ai-gateway
 
-> **EN:** A local AI gateway (LiteLLM-based) in front of free LLM providers. It masks Brazilian personal data (CPF, CNPJ, plates, phones, names via spaCy NER, secrets) before anything leaves your machine and restores the real values in the response, including streaming and tool calls. It also routes each request to the best available model by benchmark score, measured latency and reliability. Source-available under the PolyForm Noncommercial License 1.0.0: free for personal, research and non-profit use; **commercial use is not allowed**.
+**Use free LLMs for real work without handing them your customers' data.**
 
-Gateway de IA local: um endereço só (`http://127.0.0.1:4000/v1`, Chat Completions da OpenAI) na frente de vários provedores gratuitos. **Os tipos de dado sensível detectados (tabela abaixo) não saem da máquina**, seja qual for o termo de uso do provedor.
+Your agents read tickets, CRMs and databases. That text is full of CPFs, names, license plates, phone numbers and API tokens. Free tiers are great, but you don't control what happens to a prompt once it leaves your machine.
 
-```
-agente (Hermes, script, qualquer cliente OpenAI)  ──►  ai-gateway (LiteLLM + proteção)  ──►  Routeway / NVIDIA / OpenRouter / Groq / Cerebras
-                                      │ mascara CPF, nome, placa, segredo…
-                                      │ escolhe provedor, faz fallback, respeita limite grátis
-                                      │ devolve a resposta com os valores reais
-                                      └ log de cada chamada, sem conteúdo
-```
+`ai-gateway` is a single OpenAI-compatible endpoint on `127.0.0.1` that sits between your agents and the free providers:
 
-## Começar
+1. **It masks** sensitive values with deterministic markers *before* the request leaves.
+2. **It routes** the call to the best free model available right now, with automatic fallback.
+3. **It restores** the real values in the answer, including streaming chunks and tool-call arguments.
+
+Your agent works with real data. The provider never sees it. You pay **$0**.
+
+<p align="center"><img src="docs/img/how-it-works.png" alt="Your agent sends real data, the provider sees markers, your agent gets the real values back" width="100%"></p>
+
+> The example above is the gateway's real output (`gw/dados_sensiveis.py`) on the same sentence its end-to-end test uses. All data in it is fictional.
+
+## Why it's different
+
+| | Calling a free provider directly | A plain LLM proxy (no PII plugin) | **ai-gateway** |
+|---|:---:|:---:|:---:|
+| One OpenAI-compatible endpoint for many providers | ✗ | ✓ | ✓ |
+| CPF, CNPJ, plate, phone, names, secrets masked before leaving | ✗ | ✗ | ✓ |
+| Real values restored in the answer, streaming and tool calls | ✗ | ✗ | ✓ |
+| Masking can't be turned off by the client request | — | — | ✓ |
+| Picks the model per request by benchmarks × live latency × reliability | ✗ | ✗ | ✓ |
+| Cools down failing models and respects free-tier quotas | ✗ | partial | ✓ |
+| Pixel-art dashboard that never shows message content | ✗ | ✗ | ✓ |
+
+## Quickstart
 
 ```bash
 git clone https://github.com/headdira/ai-gateway && cd ai-gateway
 python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m spacy download pt_core_news_md
-./criar_env.sh                       # gera .env com as chaves internas
-# cole as chaves dos provedores no .env (links abaixo)
-.venv/bin/python testar_provedores.py   # confere chave e IDs de modelo (não gasta geração)
-./subir.sh                           # sobe em 127.0.0.1:4000
-.venv/bin/python testar_provedores.py --sondar # 1 chamada por modelo: latência real + tool call
-# painel: http://127.0.0.1:4000/painel
-.venv/bin/python relatorio.py        # uso, erros, latência e o que foi mascarado
-./parar.sh                           # para pelo PID que o subir.sh gravou
+.venv/bin/python -m spacy download pt_core_news_md   # Portuguese NER for names
+
+./criar_env.sh            # creates .env with the gateway key and the masking key
+# paste the free keys you have into .env (any subset works)
+./subir.sh                # → http://127.0.0.1:4000/v1
+open http://127.0.0.1:4000/painel
 ```
 
-| Provedor | Chave | O que dá de graça |
+Free keys (any subset works, providers without a key are just skipped):
+
+| Provider | Get a key | What's free |
 |---|---|---|
-| Routeway | https://routeway.ai/dashboard/keys | DeepSeek V4.1 Flash, MiniMax M3.1 Flash, Muse Glimmer (200/dia) |
-| NVIDIA NIM | https://build.nvidia.com/settings/api-keys | DeepSeek V4.1 Flash (40/min) |
-| OpenRouter | https://openrouter.ai/settings/keys | 14 modelos `:free` (50/dia; 1.000/dia com US$10 de crédito) |
-| Groq | https://console.groq.com/keys | gpt-oss-120b |
-| Cerebras | https://cloud.cerebras.ai | gpt-oss-120b |
+| Groq | [console.groq.com/keys](https://console.groq.com/keys) | Qwen 3.8, gpt-oss-120b (fast) |
+| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com/settings/api-keys) | DeepSeek V4.1, GLM 5.3, MiniMax M3.1, Nemotron, Gemma |
+| Routeway | [routeway.ai](https://routeway.ai/dashboard/keys) | DeepSeek V4.1 Flash, MiniMax, Muse Glimmer |
+| OpenRouter | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) | `:free` models |
+| Cerebras | [cloud.cerebras.ai](https://cloud.cerebras.ai) | gpt-oss-120b |
 
-Provedor sem chave no `.env` fica fora da config, sem erro.
+## Use it from anything that speaks OpenAI
 
-## Painel
-
-**http://127.0.0.1:4000/painel**: ranking ao vivo de cada rota (por que cada modelo está onde está), últimas decisões (escolhido → quem atendeu, tentativas, latência, dado protegido), uso por provedor contra a cota grátis e números do dia. Atualiza a cada 4 s. Não mostra conteúdo de mensagem nem chave.
-
-## Chat com agente (`gw/harness.py`)
-
-No painel, a aba **Chat** conversa com o **Hermes** (Nous Research), um agente completo. Ele usa este gateway como modelo, na rota `geral`: passa pela máscara, pelo roteamento e aparece em Atividade como `hermes-chat`.
-
-- **Instalação:** clone e instale o [hermes-agent](https://github.com/NousResearch/hermes-agent) (`uv sync`) e aponte `GW_HERMES_DIR` no `.env` para a pasta dele.
-- **Processo:** sobe numa porta livre, em sessão própria; o PID fica em `logs/harness-hermes.pid` e o `parar.sh` derruba junto.
-- **Perfil isolado** em `harness/hermes-home` (gerado a cada subida, fora do git), API de Runs e `approvals.mode: manual`. Todo comando perigoso pede aprovação no chat; o padrão dele é `smart`, em que outro LLM decide sozinho.
-- **Aprovação:** cartões de aprovar/negar e de pergunta aparecem na conversa. Sem resposta em 10 minutos, a ação é negada.
-- **Segurança:** as ações do chat (`POST /painel/chat/*`) só aceitam JSON com o header `X-GW-Painel`, vindo do próprio host do gateway. Outro site aberto no navegador não consegue disparar o agente (testado no e2e).
-- **Tamanho do prompt:** o Hermes manda de 2,5 a 12 mil tokens por chamada. Modelo de contexto curto (Routeway `:free`, 42K) fica perto do limite.
-
-## Roteamento inteligente (`gw/roteador.py`)
-
-O agente pede uma **rota** no campo `model`. A cada pedido, o gateway ordena os modelos daquela rota e manda: o 1º vira o modelo, e os 3 seguintes, o fallback daquele pedido.
-
-```
-pontuação = (peso_q × qualidade + peso_v × velocidade) × confiabilidade
-```
-
-- **Qualidade (0-100):** nota a partir dos benchmarks públicos do catálogo Routeway (HLE, SciCode, LCR, GPQA, τ², IFBench, Terminal-Bench 2.1), normalizada dentro do pool (`atualizar_qualidade.py` → `qualidade.json`). Modelo fora do catálogo usa a `nota` manual do `modelos.yaml`. No painel, passe o mouse na nota para ver os benchmarks.
-- **Velocidade:** latência real medida (média móvel). Sem medida, palpite do catálogo.
-- **Confiabilidade:** (sucesso+2)/(sucesso+falha+2,5) com esquecimento. Começa em 80%, otimista, para o roteador experimentar os de nota alta.
-- **Fica de fora:**
-  - modelo **em espera** depois de erro: 429 por 10 min, timeout por 5 min, chave ou permissão por 1 h, outro por 2 min; o tempo dobra a cada erro seguido;
-  - modelo com a **cota do dia** esgotada;
-  - modelo **sem visão**, se o pedido tem imagem;
-  - modelo cuja **ferramenta falhou**, se o pedido usa ferramenta. Ferramenta não provada perde 40% da pontuação;
-  - modelo com **contexto menor** que o prompt.
-- **Quem atendeu de verdade** vem da resposta (`model_id`). Quem estava antes na fila e não atendeu é marcado como falha. A espera é do gateway, não do LiteLLM, porque a do LiteLLM não disparou nos testes.
-- **Reserva:** se a rota não completa a fila, entram os melhores da `geral`. Exemplo: com os DeepSeek em espera, a rota `deepseek` é atendida pelo melhor disponível em vez de devolver 502.
-
-| Rota | Perfil (qualidade/velocidade) | Modelos |
-|---|---|---|
-| `geral` | equilibrado 60/40 | todo o pool |
-| `rapido` | velocidade 25/75 | todo o pool |
-| `deepseek` | qualidade 85/15 | DeepSeek V4.1 (Routeway, NVIDIA) → reserva `geral` |
-| `contexto-longo` | qualidade 85/15 | contexto ≥ 250 mil tokens → reserva `geral` |
-| `visao` | qualidade 85/15 | modelos com visão (imagem exige `GW_IMAGENS=permitir`) |
-| `local` | qualidade | modelo local já rodando (`GW_LOCAL_URL`) |
-
-Pedir um modelo direto também funciona (`"model": "m:groq/qwen/qwen3.8-27b"`), sem escolha, só com a proteção.
-
-**Sondagem:** `testar_provedores.py --sondar` chama cada modelo uma vez pedindo uma tool call. Ela mede a latência real e prova a ferramenta. Rode quando adicionar modelo ou quando quiser reavaliar todos; o roteador também aprende sozinho com o uso.
-
-Para mudar o pool ou as rotas: edite `modelos.yaml` e rode `./parar.sh && ./subir.sh`. Para atualizar as notas: `.venv/bin/python atualizar_qualidade.py`.
-
-## Usar nos agentes
-
-**Hermes** (`~/.hermes/config.yaml`; usa Chat Completions, que é a rota aberta):
-```yaml
-model:
-  provider: custom
-  base_url: http://127.0.0.1:4000/v1
-  api_key: <GW_MASTER_KEY>
-  default: geral
-```
-
-**Qualquer cliente que fale Chat Completions:**
 ```python
 from openai import OpenAI
-c = OpenAI(base_url="http://127.0.0.1:4000/v1", api_key="<GW_MASTER_KEY>")
-c.chat.completions.create(model="geral", user="meu-agente", messages=[{"role": "user", "content": "oi"}])
+
+client = OpenAI(base_url="http://127.0.0.1:4000/v1", api_key="<GW_MASTER_KEY>")
+client.chat.completions.create(
+    model="geral",                       # a route, not a model: the gateway picks
+    messages=[{"role": "user", "content": "Resume o chamado do CPF 529.982.247-25"}],
+)
 ```
-O campo `user` aparece no log como `agente`.
 
-## Proteção de dados (`gw/`)
+Routes you can ask for in `model`:
 
-Toda string de conteúdo é varrida antes do roteamento: mensagens, resultado de ferramenta e argumentos de tool call. Por isso a proteção vale para qualquer provedor, retry e fallback.
+| Route | Picks for | Models |
+|---|---|---|
+| `geral` | balance (60% quality / 40% speed) | the whole pool |
+| `rapido` | speed (25 / 75) | the whole pool |
+| `deepseek` | quality, DeepSeek only | DeepSeek V4.1 → falls back to `geral` |
+| `contexto-longo` | quality, ≥ 250k context | 1M-token models → falls back to `geral` |
+| `visao` | quality, vision models | images need `GW_IMAGENS=permitir` |
 
-| Tipo | Como detecta |
+Or pin a model: `"model": "m:groq/qwen/qwen3.8-27b"` (masking still applies).
+
+**Agents:** works with [Hermes](https://github.com/NousResearch/hermes-agent) (`provider: custom`, `base_url: http://127.0.0.1:4000/v1`, `default: geral`) and anything else that uses Chat Completions. The dashboard even has a built-in **Chat** tab that runs Hermes through the gateway, with every dangerous command waiting for your approval.
+
+## The dashboard
+
+<p align="center"><img src="docs/img/dashboard.png" alt="Dashboard overview: requests, tokens, latency, protected values, cost" width="100%"></p>
+
+Live at `http://127.0.0.1:4000/painel`: requests, tokens, latency, how many sensitive values stayed home, cost (spoiler: zero). The numbers above are one day of the author's real agent traffic. The UI is in Portuguese.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/img/routing.png" alt="Routing: live ranking of every model in a route"><br><b>Routing</b>: why each model is where it is, right now.</td>
+<td width="50%"><img src="docs/img/protection.png" alt="Protection: sensitive values masked per type"><br><b>Protection</b>: what was masked, by type, and the active policy.</td>
+</tr>
+</table>
+
+## What gets masked
+
+| Type | How it's detected |
 |---|---|
-| CPF, CNPJ (numérico e alfanumérico), RENAVAM | formato + dígito verificador |
-| CNH, RG | formato + palavra de contexto antes ("CNH", "RG") |
-| Cartão | Luhn |
-| Placa (antiga e Mercosul), chassi, telefone (DDD válido), e-mail, CEP, endereço de rua | regex |
-| Segredo | regras embutidas (AWS, GitHub, OpenRouter, Vault…), bloco PEM, `Bearer`, `senha: …`; opcionalmente as regras de um `scan.py` externo (`GW_SECRET_GATE`) |
-| Pessoa | NER em português (spaCy `pt_core_news_md`, CPU, ~3 ms/frase, sem LLM) |
+| CPF, CNPJ (numeric and the new alphanumeric), RENAVAM | format + check digits |
+| CNH, RG | format + a context word before it |
+| Credit card | Luhn |
+| License plate (old and Mercosul), chassis, phone (valid area code), e-mail, CEP, street address | regex |
+| Secrets | built-in rules (AWS, GitHub, OpenRouter, Vault…), PEM blocks, `Bearer`, `senha: …`, plus an optional external scanner (`GW_SECRET_GATE`) |
+| People's names | Portuguese NER (spaCy `pt_core_news_md`, CPU, ~3 ms per sentence, no LLM involved) |
 
-- **Máscara reversível:** cada valor vira `[TIPO_xxxxxxxx]` (HMAC com `GW_CHAVE_MASCARA`). O mesmo CPF dá o mesmo marcador em todo turno, então a conversa fica coerente e o cache de prompt funciona. O mapa marcador → valor fica **só em memória**.
-- **Na volta:** os marcadores viram o valor real no texto e nos argumentos de ferramenta, com ou sem streaming (marcador partido entre pedaços é remontado). O agente trabalha com o dado real; o provedor nunca viu.
-- **Aviso no system:** quando algo é mascarado, o modelo recebe uma linha explicando os marcadores e pedindo para copiá-los exatamente.
-- **Sem desligamento por requisição:** a proteção é callback, não guardrail, e o cliente não consegue desativá-la pelo metadata (testado).
-- **Imagem, arquivo e áudio:** barrados por padrão, porque não são inspecionáveis aqui. `GW_IMAGENS=permitir` libera, por sua conta.
-- **Bloquear em vez de mascarar:** `GW_BLOQUEAR=SEGREDO,CARTAO` devolve 400 quando esses tipos aparecem.
-- **Falso positivo:** termos em `permitidos.txt` (e no seu `permitidos.local.txt`, fora do git) nunca são mascarados.
+- **Reversible and consistent:** each value becomes `[TYPE_xxxxxxxx]` (HMAC with your `GW_CHAVE_MASCARA`). The same CPF gets the same marker in every turn, so conversations stay coherent and prompt caching still works. The marker → value map lives only in memory.
+- **Not a guardrail, a callback:** the client can't disable it through request metadata (covered by the e2e test).
+- **Images, files and audio are blocked by default**, because they can't be inspected. `GW_IMAGENS=permitir` lets them through, at your own risk.
+- **Block instead of mask:** `GW_BLOQUEAR=SEGREDO,CARTAO` returns 400 when those types show up.
 
-**Limites conhecidos:**
-- O NER não pega todo nome (às vezes classifica pessoa como organização). O modelo `pt_core_news_lg` (~500 MB) é mais preciso: troque com `GW_NER_MODELO`.
-- Dado sensível em formato livre que não é nenhum dos tipos acima (ex.: "o cliente tem diabetes") **não** é detectado.
+**Known limits, honestly:** NER misses some names (it sometimes tags a person as an organization; `pt_core_news_lg` is more precise). Free-form sensitive facts that aren't one of the types above ("the customer has diabetes") are **not** detected. Detection is tuned for Brazilian Portuguese data.
 
-## Governança e observabilidade
+## How a model gets picked
 
-- Escuta só em `127.0.0.1`. Toda chamada exige `GW_MASTER_KEY`.
-- **Rotas fechadas por padrão** (`gw/servidor.py`): só `POST /v1/chat/completions`, `GET /v1/models`, `GET /health/*` e o painel (`GET /painel`, `/painel/dados`) passam. Todo o resto responde 403 antes de chegar no LiteLLM: pass-through (`/openai/*`, `/gemini/*`, `/anthropic/*`), `/v1/responses`, `/v1/messages`, `/v1/embeddings` e admin (`/key/*`, `/ui`). Só abra uma rota depois de provar a máscara nela no e2e.
-- **Ambiente limpo:** o `subir.sh` usa `env -i`, então chave de provedor exportada no seu shell não entra no processo. As chaves dos provedores também usam nomes próprios (`GW_*`).
-- Sem `GW_CHAVE_MASCARA` o gateway não sobe (falha fechada).
-- `logs/requisicoes.jsonl`: uma linha por chamada com rota, provedor, modelo, latência, tempo até o 1º token, tokens, status/erro, agente e contagem do que foi mascarado. **Sem conteúdo.** O LiteLLM roda com `turn_off_message_logging`.
-- `relatorio.py` resume por rota/provedor: chamadas, erros, 429, p50/p95 e o total mascarado.
+```
+score = (quality weight × benchmark score + speed weight × measured speed) × reliability
+```
 
-## Testes
+- **Quality:** public benchmarks (HLE, SciCode, GPQA, τ², IFBench, Terminal-Bench…) normalized inside the pool.
+- **Speed:** real measured latency, moving average.
+- **Reliability:** success rate with decay. New models start optimistic so the router tries them.
+- **Sitting out:** models cooling down after an error (429 → 10 min, timeout → 5 min, auth → 1 h, doubling on repeats), over their daily free quota, without vision for an image request, without a *proven* tool call for a tool request, or too small for the prompt.
+- **Each request gets its own fallback chain:** the winner plus the next 3.
+
+## Context windows that don't blow up your agent
+
+`GET /v1/models` advertises each route with a **safe** window (131k on `geral`), not the 1M of the biggest model in the pool. Agents like Hermes compress the conversation before reaching it, so it keeps fitting the fast models. If nothing free can fit a request, the gateway answers `400 context length exceeded` (`code: context_length_exceeded`): the agent summarizes and retries instead of failing with a vague provider error.
+
+## Security model
+
+- Listens on `127.0.0.1` only. Every call needs `GW_MASTER_KEY`.
+- **Closed by default:** only `POST /v1/chat/completions`, `GET /v1/models`, `GET /health/*` and the dashboard get through. Pass-through routes (`/openai/*`, `/anthropic/*`…), `/v1/responses`, `/v1/embeddings` and admin answer 403 before reaching LiteLLM, because masking is only proven on chat.
+- **Clean environment:** `subir.sh` starts with `env -i`, so provider keys exported in your shell never leak into the process.
+- **Fails closed:** no `GW_CHAVE_MASCARA`, no gateway.
+- **Logs without content:** one line per call (route, model, latency, tokens, status, counts of what was masked). Never the messages.
+
+## Tests
 
 ```bash
-.venv/bin/python -m pytest -q tests/test_dados_sensiveis.py   # detecção, ida e volta, streaming partido
-.venv/bin/python tests/e2e_proxy.py                           # proxy real + provedor falso que grava o que recebe
+.venv/bin/python -m pytest -q tests/           # detectors, round-trips, router rules
+.venv/bin/python tests/e2e_proxy.py            # real proxy + fake provider that records what it receives
 ```
 
-O e2e não gasta chave nem roda modelo. Ele confere que o provedor não recebe nenhum dado sensível e que o agente recebe tudo de volta (texto e tool call, com e sem streaming). Confere também:
-- que a proteção não desliga pela requisição;
-- que o log sai sem conteúdo;
-- que imagem é barrada;
-- que as rotas fora da lista dão 403 mesmo com `OPENAI_API_KEY` no ambiente.
+The e2e test spends no keys and runs no model. It checks that the provider receives **none** of the sensitive values and that the agent gets all of them back, as text and in tool calls, with and without streaming. It also checks that masking can't be disabled per request, that logs carry no content, that images are blocked and that closed routes return 403.
 
-## Arquivos
+## Built on
 
-```
-gw/dados_sensiveis.py   detectores, cofre, máscara/desmáscara
-gw/protecao.py          callback do LiteLLM (ida, volta, streaming, log)
-gw/servidor.py          sobe o LiteLLM atrás do filtro de rotas + serve o painel
-gw/roteador.py          escolha do modelo a cada pedido + saúde (logs/saude.json)
-gw/catalogo.py          lê modelos.yaml (pool, rotas, provedores)
-gw/painel.html          painel
-atualizar_qualidade.py  benchmarks → qualidade.json
-modelos.yaml            provedores, rotas, ordem, limites grátis
-gerar_config.py         modelos.yaml + .env → config.gerado.yaml
-subir.sh / parar.sh     sobe/para (127.0.0.1, PID em logs/proxy.pid)
-testar_provedores.py    confere chaves e IDs; --chat testa cada rota
-relatorio.py            observabilidade
-permitidos.txt          termos que nunca são mascarados
-```
+[LiteLLM](https://github.com/BerriAI/litellm) (proxy), [spaCy](https://spacy.io) (NER), [Hermes Agent](https://github.com/NousResearch/hermes-agent) (optional chat), and the free tiers of Groq, NVIDIA NIM, Routeway, OpenRouter and Cerebras.
 
-## Janela de contexto para agentes
+## License
 
-O `GET /v1/models` mostra cada rota com o `contexto_anunciado` do `modelos.yaml` (131 mil tokens na `geral`), e não com o maior modelo do pool. O agente (ex.: Hermes) resume a conversa ao chegar perto desse número, então ela continua cabendo nos modelos rápidos. Se mesmo assim nenhum modelo livre couber o pedido, o gateway responde 400 `context length exceeded` (`code: context_length_exceeded`) e o agente resume e tenta de novo.
+[PolyForm Noncommercial 1.0.0](LICENSE) (copyright notice in [NOTICE](NOTICE)). Free for personal use, research, education and non-profits: use it, study it, change it, share it. **Commercial use is not allowed**; if you want that, talk to the author. This is source-available, not OSI open source.
 
-## Licença
+---
 
-[PolyForm Noncommercial 1.0.0](LICENSE) (aviso de copyright em [NOTICE](NOTICE)). Pode usar, estudar, modificar e redistribuir para uso pessoal, pesquisa, ensino e organizações sem fins lucrativos. **Uso comercial não é permitido** (vender, oferecer como serviço pago ou usar para fins comerciais). Para uso comercial, fale com o autor. Não é uma licença open source no sentido da OSI: é código aberto para consulta, sem uso comercial.
-
-Os provedores, o LiteLLM, o hermes-agent e os modelos têm licenças próprias.
+<p align="center">If this kept a CPF out of someone's training data, <b>leave a ⭐</b>. It's how other people find it.</p>
