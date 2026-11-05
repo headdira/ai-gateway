@@ -1,0 +1,7 @@
+# Catálogo de áudio do e2e: só o motor falso (tom), sem modelo nenhum.
+motores:
+  falso:
+    nome: Motor falso
+    tipo: voz
+    pasta: tests/motor_falso
+    python: .venv/bin/python

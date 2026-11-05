@@ -1,0 +1,300 @@
+{
+ "fonte": "benchmarks do catálogo Routeway (api.routeway.ai/v1/models)",
+ "gerado_em": "2026-11-03T17:02:53+00:00",
+ "metodo": "cada benchmark normalizado entre o pior e o melhor do pool; nota = média × 100",
+ "benchmarks": {
+  "hle": "Humanity's Last Exam (raciocínio difícil)",
+  "scicode": "SciCode (código científico)",
+  "lcr": "LCR (contexto longo)",
+  "gpqa": "GPQA Diamond (ciência, nível doutorado)",
+  "tau2": "τ²-bench (uso de ferramenta / agente)",
+  "ifbench": "IFBench (seguir instrução)",
+  "terminalbench_v2_1": "Terminal-Bench 2.1 (agente no terminal)"
+ },
+ "modelos": {
+  "deepseek-v4.1-flash": {
+   "nota": 89.5,
+   "componentes": {
+    "hle": {
+     "valor": 0.392,
+     "norm": 0.762
+    },
+    "scicode": {
+     "valor": 0.519,
+     "norm": 0.923
+    },
+    "lcr": {
+     "valor": 0.84,
+     "norm": 1.0
+    }
+   },
+   "no_catalogo": true
+  },
+  "gemma-4-31b-it": {
+   "nota": 53.0,
+   "componentes": {
+    "hle": {
+     "valor": 0.236,
+     "norm": 0.339
+    },
+    "scicode": {
+     "valor": 0.455,
+     "norm": 0.593
+    },
+    "lcr": {
+     "valor": 0.697,
+     "norm": 0.693
+    },
+    "gpqa": {
+     "valor": 0.857,
+     "norm": 0.645
+    },
+    "tau2": {
+     "valor": 0.599,
+     "norm": 0.385
+    },
+    "ifbench": {
+     "valor": 0.756,
+     "norm": 0.757
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.434,
+     "norm": 0.297
+    }
+   },
+   "no_catalogo": true
+  },
+  "glm-5.3-flash": {
+   "nota": 92.0,
+   "componentes": {
+    "hle": {
+     "valor": 0.399,
+     "norm": 0.78
+    },
+    "scicode": {
+     "valor": 0.516,
+     "norm": 0.907
+    },
+    "lcr": {
+     "valor": 0.8,
+     "norm": 0.914
+    },
+    "gpqa": {
+     "valor": 0.912,
+     "norm": 1.0
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.843,
+     "norm": 1.0
+    }
+   },
+   "no_catalogo": true
+  },
+  "gpt-oss-120b": {
+   "nota": 23.9,
+   "componentes": {
+    "hle": {
+     "valor": 0.196,
+     "norm": 0.23
+    },
+    "scicode": {
+     "valor": 0.34,
+     "norm": 0.0
+    },
+    "lcr": {
+     "valor": 0.52,
+     "norm": 0.314
+    },
+    "gpqa": {
+     "valor": 0.782,
+     "norm": 0.161
+    },
+    "tau2": {
+     "valor": 0.658,
+     "norm": 0.485
+    },
+    "ifbench": {
+     "valor": 0.69,
+     "norm": 0.48
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.262,
+     "norm": 0.0
+    }
+   },
+   "no_catalogo": true
+  },
+  "kimi-k2.6": {
+   "nota": 85.8,
+   "componentes": {
+    "hle": {
+     "valor": 0.375,
+     "norm": 0.715
+    },
+    "scicode": {
+     "valor": 0.515,
+     "norm": 0.902
+    },
+    "lcr": {
+     "valor": 0.81,
+     "norm": 0.936
+    },
+    "gpqa": {
+     "valor": 0.911,
+     "norm": 0.994
+    },
+    "tau2": {
+     "valor": 0.959,
+     "norm": 1.0
+    },
+    "ifbench": {
+     "valor": 0.76,
+     "norm": 0.774
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.659,
+     "norm": 0.684
+    }
+   },
+   "no_catalogo": true
+  },
+  "minimax-m3.1-flash": {
+   "nota": 96.9,
+   "componentes": {
+    "hle": {
+     "valor": 0.48,
+     "norm": 1.0
+    },
+    "scicode": {
+     "valor": 0.534,
+     "norm": 1.0
+    },
+    "lcr": {
+     "valor": 0.797,
+     "norm": 0.907
+    }
+   },
+   "no_catalogo": true
+  },
+  "muse-glimmer-30b": {
+   "nota": 55.7,
+   "componentes": {
+    "hle": {
+     "valor": 0.22,
+     "norm": 0.295
+    },
+    "scicode": {
+     "valor": 0.449,
+     "norm": 0.562
+    },
+    "lcr": {
+     "valor": 0.833,
+     "norm": 0.986
+    },
+    "gpqa": {
+     "valor": 0.835,
+     "norm": 0.503
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.517,
+     "norm": 0.439
+    }
+   },
+   "no_catalogo": true
+  },
+  "nemotron-3-ultra-550b-a55b": {
+   "nota": 66.7,
+   "componentes": {
+    "hle": {
+     "valor": 0.284,
+     "norm": 0.469
+    },
+    "scicode": {
+     "valor": 0.403,
+     "norm": 0.325
+    },
+    "lcr": {
+     "valor": 0.793,
+     "norm": 0.9
+    },
+    "gpqa": {
+     "valor": 0.867,
+     "norm": 0.71
+    },
+    "tau2": {
+     "valor": 0.833,
+     "norm": 0.785
+    },
+    "ifbench": {
+     "valor": 0.814,
+     "norm": 1.0
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.539,
+     "norm": 0.477
+    }
+   },
+   "no_catalogo": true
+  },
+  "north-mini-code": {
+   "nota": 5.8,
+   "componentes": {
+    "hle": {
+     "valor": 0.111,
+     "norm": 0.0
+    },
+    "scicode": {
+     "valor": 0.388,
+     "norm": 0.247
+    },
+    "lcr": {
+     "valor": 0.373,
+     "norm": 0.0
+    },
+    "gpqa": {
+     "valor": 0.757,
+     "norm": 0.0
+    },
+    "tau2": {
+     "valor": 0.374,
+     "norm": 0.0
+    },
+    "ifbench": {
+     "valor": 0.576,
+     "norm": 0.0
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.356,
+     "norm": 0.161
+    }
+   },
+   "no_catalogo": true
+  },
+  "qwen3.8-27b": {
+   "nota": 82.0,
+   "componentes": {
+    "hle": {
+     "valor": 0.339,
+     "norm": 0.618
+    },
+    "scicode": {
+     "valor": 0.466,
+     "norm": 0.649
+    },
+    "lcr": {
+     "valor": 0.82,
+     "norm": 0.957
+    },
+    "gpqa": {
+     "valor": 0.905,
+     "norm": 0.955
+    },
+    "terminalbench_v2_1": {
+     "valor": 0.798,
+     "norm": 0.923
+    }
+   },
+   "no_catalogo": true
+  }
+ }
+}

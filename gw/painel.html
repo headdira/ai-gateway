@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-gateway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* Paleta PICO-8 */
+  :root {
+    --preto: #000000; --azul-escuro: #1d2b53; --vinho: #7e2553; --verde-escuro: #008751;
+    --marrom: #ab5236; --cinza-escuro: #5f574f; --cinza: #c2c3c7; --branco: #fff1e8;
+    --vermelho: #ff004d; --laranja: #ffa300; --amarelo: #ffec27; --verde: #00e436;
+    --azul: #29adff; --lavanda: #83769c; --rosa: #ff77a8; --pessego: #ffccaa;
+    --fundo: #1d2b53; --painel: #111a38; --painel-2: #24336a; --borda: #000;
+    --px: 4px;
+    --titulo: "Press Start 2P", monospace;
+    --texto: "Pixelify Sans", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--fundo); color: var(--branco); font: 400 17px/1.35 var(--texto);
+    image-rendering: pixelated; -webkit-font-smoothing: none; font-smooth: never;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 2px, transparent 2px);
+    background-size: 24px 24px;
+  }
+  button, select, input { font: inherit; color: inherit; }
+
+  /* caixa pixel: borda preta com cantos "comidos" */
+  .caixa {
+    background: var(--painel); position: relative; margin: var(--px);
+    box-shadow:
+      0 calc(-1 * var(--px)) 0 0 var(--borda), 0 var(--px) 0 0 var(--borda),
+      calc(-1 * var(--px)) 0 0 0 var(--borda), var(--px) 0 0 0 var(--borda),
+      inset 0 var(--px) 0 0 rgba(255,255,255,.07), inset 0 calc(-1 * var(--px)) 0 0 rgba(0,0,0,.35);
+  }
+
+  .app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+
+  /* barra lateral */
+  .lado { background: #0b1230; border-right: var(--px) solid var(--preto); padding: 20px 14px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 18px; }
+  .logo { display: flex; align-items: center; gap: 10px; padding: 4px 6px 14px; }
+  .logo span { font: 12px/1.6 var(--titulo); color: var(--amarelo); text-shadow: 3px 3px 0 var(--vinho); }
+  .nav { display: flex; flex-direction: column; gap: 6px; }
+  .nav a {
+    display: flex; align-items: center; gap: 12px; padding: 9px 10px; color: var(--cinza); text-decoration: none; font-size: 17px;
+    border: var(--px) solid transparent;
+  }
+  .nav a:hover { color: var(--branco); background: rgba(255,255,255,.05); }
+  .nav a.ativo { color: var(--preto); background: var(--amarelo); border-color: var(--preto); box-shadow: var(--px) var(--px) 0 var(--vinho); }
+  .nav a.ativo svg rect { fill: var(--preto); }
+  .nav a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, tr:focus-visible { outline: var(--px) solid var(--azul); outline-offset: 2px; }
+  .lado-pe { margin-top: auto; font-size: 14px; color: var(--lavanda); padding: 0 6px; }
+  .lado-pe b { color: var(--cinza); font-weight: 500; }
+
+  .lampada { display: inline-block; width: 12px; height: 12px; background: var(--verde); box-shadow: 0 0 0 3px var(--preto); margin-right: 8px; vertical-align: -1px; animation: pisca 1.2s steps(2) infinite; }
+  .lampada.off { background: var(--vermelho); animation: none; }
+  @keyframes pisca { 50% { background: var(--verde-escuro); } }
+
+  /* topo */
+  .conteudo { padding: 22px 30px 60px; min-width: 0; }
+  .topo { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+  .topo h1 { font: 18px/1.4 var(--titulo); margin: 0; color: var(--branco); text-shadow: 3px 3px 0 var(--preto); }
+  .topo .dir { margin-left: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: var(--preto); padding: 3px; gap: 3px; }
+  .seg button { background: var(--painel-2); border: 0; padding: 6px 12px; cursor: pointer; color: var(--cinza); font-size: 15px; }
+  .seg button.on { background: var(--azul); color: var(--preto); }
+  .botao { background: var(--painel-2); border: 0; padding: 7px 12px; cursor: pointer; box-shadow: 0 0 0 3px var(--preto), 3px 3px 0 3px var(--preto); font-size: 15px; }
+  .botao:active { transform: translate(3px, 3px); box-shadow: 0 0 0 3px var(--preto); }
+  .botao:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  #au-descarregar { margin-left: 14px; font-size: 13px; padding: 5px 10px; }
+  .botao code { color: var(--pessego); font-family: var(--texto); }
+
+  /* cartões de número */
+  .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; margin-bottom: 22px; }
+  .num { padding: 14px 16px 12px; }
+  .num .rot { color: var(--cinza); font-size: 15px; }
+  .num .val { font: 22px/1.5 var(--titulo); margin: 8px 0 4px; letter-spacing: -1px; }
+  .num .sub { color: var(--lavanda); font-size: 14px; }
+  .c-verde .val { color: var(--verde); } .c-azul .val { color: var(--azul); } .c-amarelo .val { color: var(--amarelo); }
+  .c-rosa .val { color: var(--rosa); } .c-laranja .val { color: var(--laranja); } .c-pessego .val { color: var(--pessego); }
+
+  .grade { display: grid; gap: 22px; }
+  .g2 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
+  .top td:first-child { white-space: normal; width: 100%; }
+  .top td { padding-left: 4px; padding-right: 4px; }
+  .sub-cel { display: block; color: var(--lavanda); font-size: 13px; }
+  .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .g-meio { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .bloco { padding: 16px 18px; min-width: 0; }
+  .bloco h2 { font: 11px/1.6 var(--titulo); margin: 0 0 14px; color: var(--pessego); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .bloco h2 small { font: 14px var(--texto); color: var(--lavanda); }
+  .legenda { margin-left: auto; display: flex; gap: 12px; font: 14px var(--texto); color: var(--cinza); }
+  .legenda i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; box-shadow: 0 0 0 2px var(--preto); }
+  canvas { display: block; width: 100%; image-rendering: pixelated; }
+  .grafico { position: relative; }
+  .dica { position: absolute; pointer-events: none; background: var(--preto); color: var(--branco); padding: 6px 9px; font-size: 14px; white-space: nowrap; box-shadow: 3px 3px 0 var(--vinho); display: none; z-index: 3; }
+
+  /* tabelas */
+  .tabela { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  th { text-align: left; font: 9px/1.6 var(--titulo); color: var(--lavanda); padding: 8px 10px; border-bottom: var(--px) solid var(--preto); white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 2px dashed rgba(131,118,156,.35); white-space: nowrap; vertical-align: middle; }
+  tbody tr:hover td { background: rgba(41,173,255,.08); }
+  tr.clicavel { cursor: pointer; }
+  .mod { color: var(--branco); font-weight: 500; }
+  .prov { color: var(--lavanda); font-size: 14px; }
+  .fraco { color: var(--lavanda); }
+  .ok { color: var(--verde); } .alerta { color: var(--laranja); } .ruim { color: var(--vermelho); } .info { color: var(--azul); }
+  .selo { display: inline-block; padding: 1px 8px; font-size: 14px; color: var(--preto); box-shadow: 0 0 0 2px var(--preto); }
+  .selo.ok { background: var(--verde); color: var(--preto); } .selo.alerta { background: var(--laranja); color: var(--preto); }
+  .selo.ruim { background: var(--vermelho); color: var(--branco); } .selo.info { background: var(--azul); color: var(--preto); }
+  .selo.cinza { background: var(--cinza-escuro); color: var(--branco); }
+  .chip { display: inline-block; padding: 0 6px; margin: 1px 3px 1px 0; font-size: 13px; background: var(--vinho); color: var(--pessego); }
+
+  /* barra em blocos */
+  .blocos { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 8px; }
+  .blocos i { width: 7px; height: 12px; background: #2a335c; }
+  .blocos i.on { background: var(--cor, var(--azul)); }
+
+  .filtros { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .filtros select, .filtros input { background: var(--preto); border: 0; padding: 7px 10px; color: var(--branco); box-shadow: 0 0 0 3px var(--painel-2); }
+  .filtros input { min-width: 220px; }
+  .filtros .conta { margin-left: auto; color: var(--lavanda); }
+
+  /* gaveta de detalhe */
+  .gaveta { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); background: var(--painel); border-left: var(--px) solid var(--preto); box-shadow: -8px 0 0 rgba(0,0,0,.35); padding: 22px; overflow-y: auto; transform: translateX(110%); transition: transform .18s steps(4); z-index: 10; }
+  .gaveta.aberta { transform: none; }
+  .gaveta h3 { font: 12px/1.6 var(--titulo); color: var(--amarelo); margin: 0 0 16px; }
+  .gaveta dl { display: grid; grid-template-columns: 120px 1fr; gap: 8px 12px; margin: 0 0 18px; }
+  .gaveta dt { color: var(--lavanda); } .gaveta dd { margin: 0; overflow-wrap: anywhere; }
+  .passos { list-style: none; padding: 0; margin: 0 0 18px; }
+  .passos li { padding: 8px 10px; margin-bottom: 8px; background: var(--painel-2); display: flex; gap: 10px; align-items: center; }
+  .erro-caixa { background: var(--preto); color: var(--pessego); padding: 10px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .fechar { float: right; }
+
+  .provs { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+  .prov-card h3 { font: 11px/1.6 var(--titulo); margin: 0 0 10px; display: flex; align-items: center; }
+  .prov-card .linha { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 2px dashed rgba(131,118,156,.3); font-size: 15px; }
+  .prov-card .linha:last-child { border: 0; }
+  .prov-card a { color: var(--azul); }
+
+  .formula { background: var(--preto); padding: 12px 14px; font-size: 16px; color: var(--pessego); margin-bottom: 16px; line-height: 1.6; }
+  .formula b { color: var(--amarelo); font-weight: 500; }
+  .vazio { color: var(--lavanda); padding: 18px 4px; }
+  .politica { list-style: none; padding: 0; margin: 0; }
+  .politica li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 2px dashed rgba(131,118,156,.3); }
+  .grande { font: 34px/1.4 var(--titulo); color: var(--verde); margin: 6px 0; }
+
+
+  /* ---------- chat ---------- */
+  .chat { display: grid; grid-template-rows: auto auto 1fr auto; height: calc(100vh - 110px); min-height: 520px; padding: 16px 18px; }
+  .chat-topo { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .chat-topo .estado-h { color: var(--cinza); font-size: 15px; display: inline-flex; align-items: center; }
+  .chat-topo .acoes { margin-left: auto; display: flex; gap: 12px; }
+  .seg.harness button { font: 11px/1.6 var(--titulo); padding: 8px 14px; }
+  .seg.harness button.on { background: var(--amarelo); }
+  .chat-info { color: var(--lavanda); font-size: 14px; margin: 12px 0 8px; padding: 8px 10px; background: rgba(0,0,0,.3); }
+  .chat-info b { color: var(--pessego); font-weight: 500; }
+  .msgs { overflow-y: auto; padding: 8px 6px 8px 2px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 78%; padding: 10px 14px; position: relative; overflow-wrap: anywhere; }
+  .msg.eu { align-self: flex-end; background: var(--azul-escuro); box-shadow: 0 0 0 3px var(--preto), 4px 4px 0 3px var(--preto); }
+  .msg.ia { align-self: flex-start; background: var(--painel-2); box-shadow: 0 0 0 3px var(--preto), 4px 4px 0 3px var(--vinho); }
+  .msg .quem { font: 9px/1.6 var(--titulo); color: var(--amarelo); margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+  .msg.eu .quem { color: var(--azul); justify-content: flex-end; }
+  .msg .corpo { white-space: pre-wrap; line-height: 1.45; }
+  .msg .corpo code { background: var(--preto); color: var(--pessego); padding: 0 4px; font-family: var(--texto); }
+  .msg .corpo pre { background: var(--preto); color: var(--pessego); padding: 10px; overflow-x: auto; white-space: pre; margin: 8px 0; }
+  .msg .rodape-msg { margin-top: 8px; color: var(--lavanda); font-size: 13px; }
+  .cursor { display: inline-block; width: 9px; height: 16px; background: var(--amarelo); vertical-align: -2px; animation: pisca 1s steps(2) infinite; }
+  details.pensou, details.ferr { margin: 6px 0; background: rgba(0,0,0,.3); padding: 6px 10px; }
+  details.pensou summary, details.ferr summary { cursor: pointer; color: var(--lavanda); font-size: 14px; list-style: none; }
+  details.pensou summary::before, details.ferr summary::before { content: "▸ "; }
+  details[open].pensou summary::before, details[open].ferr summary::before { content: "▾ "; }
+  details.pensou div { color: var(--lavanda); font-size: 14px; white-space: pre-wrap; margin-top: 6px; }
+  details.ferr pre { white-space: pre-wrap; color: var(--cinza); font: 13px var(--texto); margin: 6px 0 0; max-height: 220px; overflow: auto; }
+  .card-acao { margin: 8px 0; padding: 10px 12px; background: var(--preto); box-shadow: 0 0 0 3px var(--amarelo); }
+  .card-acao h4 { font: 10px/1.6 var(--titulo); color: var(--amarelo); margin: 0 0 8px; }
+  .card-acao pre { white-space: pre-wrap; color: var(--pessego); font: 14px var(--texto); max-height: 200px; overflow: auto; margin: 0 0 10px; }
+  .card-acao input { width: 100%; background: var(--painel-2); border: 0; padding: 7px 9px; margin-bottom: 8px; color: var(--branco); }
+  .card-acao .bts { display: flex; gap: 12px; }
+  .bt-sim { background: var(--verde) !important; color: var(--preto) !important; }
+  .bt-nao { background: var(--vermelho) !important; color: var(--branco) !important; }
+  .composer { display: flex; gap: 12px; align-items: flex-end; margin-top: 12px; }
+  .composer textarea { flex: 1; resize: none; min-height: 52px; max-height: 180px; background: var(--preto); color: var(--branco); border: 0; padding: 12px 14px; font: 17px/1.35 var(--texto); box-shadow: 0 0 0 3px var(--painel-2); }
+  .composer textarea:focus { outline: none; box-shadow: 0 0 0 3px var(--amarelo); }
+  .composer .botao { padding: 14px 18px; font: 11px var(--titulo); background: var(--amarelo); color: var(--preto); }
+  .composer .botao:disabled { background: var(--cinza-escuro); color: var(--cinza); cursor: not-allowed; }
+  .vazio-chat { margin: auto; text-align: center; color: var(--lavanda); max-width: 46ch; }
+  .vazio-chat h3 { font: 12px/1.8 var(--titulo); color: var(--pessego); }
+  .lampada.ligando { background: var(--laranja); }
+
+  /* ---------- áudio ---------- */
+  .audio-grade { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 1100px) { .audio-grade { grid-template-columns: 1fr; } }
+  .motores { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 12px 0 16px; }
+  .motor { background: var(--painel-2); padding: 10px 12px; cursor: pointer; box-shadow: 0 0 0 3px var(--preto); text-align: left; border: 0; color: var(--branco); font: inherit; }
+  .motor.on { box-shadow: 0 0 0 3px var(--amarelo), 4px 4px 0 3px var(--vinho); }
+  .motor h4 { font: 10px/1.6 var(--titulo); margin: 0 0 6px; display: flex; align-items: center; color: var(--pessego); }
+  .motor p { margin: 0; color: var(--lavanda); font-size: 13.5px; }
+  .motor .tags { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .campo { display: grid; gap: 6px; margin-bottom: 14px; }
+  .campo label { color: var(--cinza); font-size: 15px; display: flex; justify-content: space-between; gap: 10px; }
+  .campo textarea, .campo input[type=text], .campo input[type=number], .campo select { background: var(--preto); color: var(--branco); border: 0; padding: 10px 12px; font: 16px/1.4 var(--texto); box-shadow: 0 0 0 3px var(--painel-2); }
+  .campo textarea { min-height: 260px; resize: vertical; }
+  .campo textarea.curto { min-height: 90px; }
+  .campo textarea:focus, .campo input:focus, .campo select:focus { outline: none; box-shadow: 0 0 0 3px var(--amarelo); }
+  .linha-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  input[type=range] { accent-color: var(--amarelo); width: 100%; }
+  .gerar { width: 100%; padding: 14px; font: 12px var(--titulo); background: var(--amarelo); color: var(--preto); }
+  .gerar:disabled { background: var(--cinza-escuro); color: var(--cinza); cursor: not-allowed; }
+  .tarefa { padding: 12px 0; border-bottom: 2px dashed rgba(131,118,156,.35); }
+  .tarefa:last-child { border: 0; }
+  .tarefa .t1 { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
+  .tarefa .tit { font-weight: 500; overflow-wrap: anywhere; }
+  .tarefa .meta { color: var(--lavanda); font-size: 13.5px; margin-top: 2px; }
+  .tarefa audio { width: 100%; margin-top: 8px; height: 34px; }
+  .tarefa .acoes-t { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .tarefa .acoes-t a, .tarefa .acoes-t button { font-size: 14px; padding: 4px 10px; }
+  .tarefa .acoes-t a { color: var(--preto); background: var(--verde); text-decoration: none; box-shadow: 0 0 0 2px var(--preto); }
+  .pagina { display: none; } .pagina.ativa { display: block; }
+
+  @media (max-width: 1100px) { .g2, .g3, .g-meio { grid-template-columns: 1fr; } }
+  @media (max-width: 820px) {
+    .app { grid-template-columns: 1fr; }
+    .lado { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; border-right: 0; border-bottom: var(--px) solid var(--preto); padding: 12px; }
+    .logo { padding: 0; } .nav { flex-direction: row; flex-wrap: wrap; } .nav a span { display: none; } .lado-pe { display: none; }
+    .conteudo { padding: 18px 14px 48px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="lado">
+    <div class="logo"><svg id="logo" width="32" height="32"></svg><span>AI<br>GATEWAY</span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="lado-pe"><span class="lampada" id="lampada"></span><b id="estado">conectando</b><br>127.0.0.1:4000/v1</div>
+  </aside>
+
+  <main class="conteudo">
+    <div class="topo">
+      <h1 id="titulo">Visão geral</h1>
+      <div class="dir">
+        <div class="seg" id="periodo">
+          <button data-p="1h">1h</button><button data-p="24h" class="on">24h</button><button data-p="7d">7 dias</button>
+        </div>
+        <button class="botao" id="copiar" title="Copiar o endereço da API"><code>http://127.0.0.1:4000/v1</code></button>
+      </div>
+    </div>
+
+    <!-- VISÃO GERAL -->
+    <section class="pagina" id="pg-visao">
+      <div class="numeros" id="numeros"></div>
+      <div class="grade g2">
+        <div class="grade">
+          <div class="caixa bloco"><h2>Requisições <span class="legenda"><span><i style="background:var(--verde)"></i>ok</span><span><i style="background:var(--laranja)"></i>com reserva</span><span><i style="background:var(--vermelho)"></i>erro</span></span></h2>
+            <div class="grafico"><canvas id="g-req" height="200"></canvas><div class="dica"></div></div></div>
+          <div class="grade g-meio">
+            <div class="caixa bloco"><h2>Tokens <span class="legenda"><span><i style="background:var(--azul)"></i>entrada</span><span><i style="background:var(--rosa)"></i>saída</span></span></h2>
+              <div class="grafico"><canvas id="g-tok" height="150"></canvas><div class="dica"></div></div></div>
+            <div class="caixa bloco"><h2>Latência típica</h2>
+              <div class="grafico"><canvas id="g-lat" height="150"></canvas><div class="dica"></div></div></div>
+          </div>
+        </div>
+        <div class="caixa bloco"><h2>Modelos mais usados</h2><div id="top-modelos"></div></div>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section class="pagina" id="pg-chat">
+      <div class="caixa chat">
+        <div class="chat-topo">
+          <div class="seg harness" id="chat-harness"><button data-h="hermes">HERMES</button></div>
+          <span class="estado-h"><span class="lampada off" id="chat-lamp"></span><span id="chat-estado">parado</span></span>
+          <div class="acoes"><button class="botao" id="chat-nova">Nova conversa</button><button class="botao" id="chat-desligar">Desligar</button></div>
+        </div>
+        <div class="chat-info" id="chat-info"></div>
+        <div class="msgs" id="chat-msgs"></div>
+        <div class="composer">
+          <textarea id="chat-texto" rows="2" placeholder="Escreva para o agente (Enter envia, Shift+Enter quebra linha)"></textarea>
+          <button class="botao" id="chat-enviar">Enviar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ÁUDIO -->
+    <section class="pagina" id="pg-audio">
+      <div class="audio-grade">
+        <div class="caixa bloco">
+          <div class="filtros"><div class="seg harness" id="au-modo"><button data-m="voz" class="on">VOZ</button><button data-m="musica">MÚSICA</button></div>
+            <span class="conta" id="au-motor-estado"></span><button class="botao" id="au-descarregar" hidden>Descarregar modelo</button></div>
+          <div class="motores" id="au-motores"></div>
+          <div id="au-form-voz">
+            <div class="campo"><label for="au-texto"><span>Texto</span><span class="fraco" id="au-conta"></span></label>
+              <textarea id="au-texto" placeholder="Cole aqui o texto, do tamanho que for: um parágrafo ou um livro. O gerador corta em frases e emenda tudo num arquivo só."></textarea></div>
+            <div class="linha-campos">
+              <div class="campo"><label for="au-voz">Voz</label><select id="au-voz"></select></div>
+              <div class="campo"><label for="au-vel"><span>Velocidade</span><span id="au-vel-v">1,0×</span></label><input type="range" id="au-vel" min="0.7" max="1.4" step="0.05" value="1"></div>
+            </div>
+          </div>
+          <div id="au-form-musica" hidden>
+            <div class="campo"><label for="au-prompt">Estilo</label><textarea class="curto" id="au-prompt" placeholder="Ex.: samba-rock instrumental, guitarra limpa, baixo groovado, 110 bpm, clima de fim de tarde"></textarea></div>
+            <div class="campo"><label for="au-cantada">Voz cantada</label><select id="au-cantada"><option value="pt">Português</option><option value="en">Inglês</option><option value="inst">Instrumental (sem voz)</option></select></div>
+            <div class="campo"><label for="au-letra">Letra</label><textarea class="curto" id="au-letra" placeholder="[verse]&#10;Primeira estrofe...&#10;[chorus]&#10;Refrão..."></textarea></div>
+            <div class="linha-campos">
+              <div class="campo"><label for="au-dur"><span>Duração</span><span id="au-dur-v">30 s</span></label><input type="range" id="au-dur" min="10" max="240" step="5" value="30"></div>
+              <div class="campo"><label for="au-semente">Semente (opcional)</label><input type="number" id="au-semente" placeholder="aleatória"></div>
+            </div>
+          </div>
+          <button class="botao gerar" id="au-gerar">Gerar</button>
+          <p class="fraco" style="margin:12px 0 0;font-size:14px">Tudo roda no seu Mac, um modelo por vez; o motor desliga sozinho depois de uns minutos parado. Saída em OGG.</p>
+        </div>
+        <div class="caixa bloco"><h2>Gerados <small id="au-resumo"></small></h2><div id="au-tarefas"></div></div>
+      </div>
+    </section>
+
+    <!-- ATIVIDADE -->
+    <section class="pagina" id="pg-atividade">
+      <div class="caixa bloco">
+        <div class="filtros">
+          <select id="f-status"><option value="">Todos os status</option><option value="ok">Sucesso</option><option value="fallback">Com reserva</option><option value="erro">Erro</option></select>
+          <select id="f-rota"><option value="">Todas as rotas</option></select>
+          <input id="f-busca" placeholder="Buscar modelo ou agente">
+          <span class="conta" id="f-conta"></span>
+        </div>
+        <div class="tabela"><table>
+          <thead><tr><th>Quando</th><th>Modelo</th><th>Rota</th><th>Agente</th><th>Tokens</th><th>Latência</th><th>Tent.</th><th>Protegido</th><th>Status</th></tr></thead>
+          <tbody id="t-atividade"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- MODELOS -->
+    <section class="pagina" id="pg-modelos">
+      <div class="caixa bloco"><div class="tabela"><table>
+        <thead><tr><th>Modelo</th><th>Provedor</th><th>Contexto</th><th>Qualidade</th><th>Latência</th><th>Acerto</th><th>Ferramenta</th><th>Visão</th><th>Uso hoje</th><th>Status</th></tr></thead>
+        <tbody id="t-modelos"></tbody>
+      </table></div></div>
+    </section>
+
+    <!-- PROVEDORES -->
+    <section class="pagina" id="pg-provedores"><div class="provs" id="provs"></div></section>
+
+    <!-- ROTEAMENTO -->
+    <section class="pagina" id="pg-roteamento">
+      <div class="caixa bloco">
+        <div class="filtros"><div class="seg" id="rotas"></div><span class="conta" id="rota-info"></span></div>
+        <div class="formula">pontuação = (<b>peso qualidade</b> × nota + <b>peso velocidade</b> × velocidade) × <b>acerto</b><br>
+          Quem falha fica em espera (429: 10 min · timeout: 5 min · chave: 1 h), e o próximo da fila assume.</div>
+        <div class="tabela"><table>
+          <thead><tr><th>#</th><th>Modelo</th><th>Qualidade</th><th>Velocidade</th><th>Acerto</th><th>Ferramenta</th><th>Pontuação</th><th>Situação</th></tr></thead>
+          <tbody id="t-rota"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- PROTEÇÃO -->
+    <section class="pagina" id="pg-protecao">
+      <div class="grade g2">
+        <div class="caixa bloco"><h2>Dados que não saíram da máquina</h2><div class="grande" id="prot-total">0</div>
+          <p class="fraco" id="prot-sub" style="margin:0 0 16px"></p><div id="prot-tipos"></div></div>
+        <div class="caixa bloco"><h2>Política</h2><ul class="politica" id="politica"></ul></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<aside class="gaveta" id="gaveta" aria-hidden="true"></aside>
+
+<script>
+/* ---------- ícones 8×8 (pixel art) ---------- */
+const ICONES = {
+  visao:      ["........", ".#....#.", ".#...##.", ".#..###.", ".#.####.", ".######.", "........", "########"],
+  atividade:  ["######..", "........", "#####...", "........", "#######.", "........", "####....", "........"],
+  modelos:    [".#.#.#..", "#######.", "#.....#.", "#.###.#.", "#.###.#.", "#.....#.", "#######.", ".#.#.#.."],
+  provedores: ["..##....", "..##....", "########", "#......#", "#.#..#.#", "#......#", "########", "...##..."],
+  roteamento: ["....#...", "....##..", "#######.", "....##..", "..#.#...", ".##.....", "#######.", ".##....."],
+  protecao:   [".######.", "#......#", "#..##..#", "#.####.#", "#..##..#", ".#....#.", "..#..#..", "...##..."],
+  chat:       ["########", "#......#", "#.#..#.#", "#......#", "#.####.#", "########", ".##.....", ".#......"],
+  audio:      ["....##..", "...###..", "..#.##..", "#..#.#..", "#..#.#..", "..#.##..", "...###..", "....##.."],
+};
+const LOGO = ["..####..", ".#....#.", "#.#..#.#", "#......#", "#.####.#", ".#....#.", "..####..", ".#.##.#."];
+function svgPixel(bits, tam, cor) {
+  const n = bits.length, p = tam / n;
+  let r = "";
+  bits.forEach((lin, y) => [...lin].forEach((c, x) => { if (c === "#") r += `<rect x="${x * p}" y="${y * p}" width="${p}" height="${p}" fill="${cor}"/>`; }));
+  return r;
+}
+document.getElementById("logo").innerHTML = svgPixel(LOGO, 32, "#ffec27");
+
+const PAGINAS = [["visao", "Visão geral"], ["chat", "Chat"], ["audio", "Áudio"], ["atividade", "Atividade"], ["modelos", "Modelos"], ["provedores", "Provedores"], ["roteamento", "Roteamento"], ["protecao", "Proteção"]];
+document.getElementById("nav").innerHTML = PAGINAS.map(([id, nome]) =>
+  `<a href="#/${id}" data-p="${id}"><svg width="16" height="16" shape-rendering="crispEdges">${svgPixel(ICONES[id], 16, "currentColor")}</svg><span>${nome}</span></a>`).join("");
+document.querySelectorAll("#nav svg rect").forEach((r) => r.setAttribute("fill", "currentColor"));
+
+/* ---------- utilidades ---------- */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const curto = (n) => (n || "").replace(/^m:/, "");
+const modelo = (n) => curto(n).split("/").slice(1).join("/") || curto(n);
+const provDe = (n) => curto(n).split("/")[0];
+const ms = (v) => v == null ? "—" : v < 1000 ? `${Math.round(v)} ms` : `${(v / 1000).toFixed(1).replace(".", ",")} s`;
+const mil = (v) => v == null ? "—" : v >= 1e6 ? (v / 1e6).toFixed(1).replace(".", ",") + "M" : v >= 1e3 ? (v / 1e3).toFixed(1).replace(".", ",") + "k" : String(v);
+const quando = (ts) => {
+  const d = new Date(ts), h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return d.toDateString() === new Date().toDateString() ? h : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + h;
+};
+const NOME_TIPO = { PESSOA: "nome", CPF: "CPF", CNPJ: "CNPJ", PLACA: "placa", EMAIL: "e-mail", TELEFONE: "telefone", SEGREDO: "senha/token", CARTAO: "cartão", RENAVAM: "RENAVAM", CHASSI: "chassi", CNH: "CNH", RG: "RG", CEP: "CEP", ENDERECO: "endereço" };
+const MOTIVO = { timeout: "não respondeu a tempo", "429": "limite do provedor", auth: "chave ou acesso recusado", caiu: "falhou e passou a vez", erro: "deu erro" };
+const blocos = (frac, cor, n = 10) => `<span class="blocos" style="--cor:${cor}">${Array.from({ length: n }, (_, i) => `<i class="${i < Math.round(frac * n) ? "on" : ""}"></i>`).join("")}</span>`;
+const voltaEm = (ate) => { const s = Math.max(0, Math.round(ate - Date.now() / 1000)); return s < 60 ? `${s} s` : `${Math.ceil(s / 60)} min`; };
+function statusDe(d) {
+  if (d.status !== "ok") return ["erro", "ruim"];
+  if ((d.tentativas || 1) > 1) return ["reserva", "alerta"];
+  return ["ok", "ok"];
+}
+
+/* ---------- gráficos em blocos (canvas) ---------- */
+const COR = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function prepara(cv) {
+  const larg = Math.max(200, cv.clientWidth), alt = cv.height;
+  cv.width = larg; cv.style.height = alt + "px";
+  const c = cv.getContext("2d"); c.imageSmoothingEnabled = false;
+  c.clearRect(0, 0, larg, alt);
+  return { c, larg, alt };
+}
+function eixo(c, larg, alt, maxV, fmt, rotulos) {
+  c.font = "14px 'Pixelify Sans', monospace"; c.fillStyle = COR("--lavanda");
+  const base = alt - 22, topo = 10;
+  for (let i = 0; i <= 3; i++) {
+    const y = Math.round(base - (base - topo) * i / 3);
+    c.fillStyle = "rgba(131,118,156,.25)";
+    for (let x = 44; x < larg; x += 8) c.fillRect(x, y, 4, 2);
+    c.fillStyle = COR("--lavanda");
+    c.fillText(fmt(maxV * i / 3), 0, y + 5);
+  }
+  const passo = Math.max(1, Math.ceil(rotulos.length / Math.max(2, Math.floor((larg - 44) / 70))));
+  rotulos.forEach((r, i) => { if (i % passo === 0) c.fillText(r, 44 + i * (larg - 44) / rotulos.length, alt - 4); });
+  return { base, topo, x0: 44, w: larg - 44 };
+}
+const BLOCO = 4;
+const snap = (v) => Math.round(v / BLOCO) * BLOCO;
+function barras(id, serie, camadas, fmt) {
+  const cv = $(id); const { c, larg, alt } = prepara(cv);
+  const tot = serie.map((b) => camadas.reduce((s, [k]) => s + (b[k] || 0), 0));
+  const maxV = Math.max(1, ...tot);
+  const rot = serie.map((b) => rotuloTempo(b.ini));
+  const g = eixo(c, larg, alt, maxV, fmt, rot);
+  const bw = g.w / serie.length, larguraBarra = Math.max(BLOCO, snap(bw * 0.62));
+  serie.forEach((b, i) => {
+    let y = g.base;
+    const x = snap(g.x0 + i * bw + (bw - larguraBarra) / 2);
+    camadas.forEach(([k, cor]) => {
+      const h = snap((b[k] || 0) / maxV * (g.base - g.topo));
+      if (!h) return;
+      c.fillStyle = "#000"; c.fillRect(x - 2, y - h - 2, larguraBarra + 4, h + 2);
+      c.fillStyle = COR(cor); c.fillRect(x, y - h, larguraBarra, h);
+      c.fillStyle = "rgba(255,255,255,.25)"; c.fillRect(x, y - h, larguraBarra, BLOCO / 2);
+      y -= h;
+    });
+  });
+  dicas(cv, g, serie, (b) => camadas.map(([k, , nome]) => `${nome}: ${fmt(b[k] || 0)}`).join("  ·  "));
+}
+function linha(id, serie, campo, cor, fmt) {
+  const cv = $(id); const { c, larg, alt } = prepara(cv);
+  const vals = serie.map((b) => b[campo]);
+  const maxV = Math.max(1, ...vals.filter((v) => v != null));
+  const g = eixo(c, larg, alt, maxV, fmt, serie.map((b) => rotuloTempo(b.ini)));
+  const bw = g.w / serie.length;
+  let ant = null;
+  c.fillStyle = COR(cor);
+  vals.forEach((v, i) => {
+    if (v == null) { ant = null; return; }
+    const x = snap(g.x0 + i * bw + bw / 2), y = snap(g.base - v / maxV * (g.base - g.topo));
+    if (ant) { // degrau: horizontal depois vertical
+      for (let xx = ant[0]; xx <= x; xx += BLOCO) c.fillRect(xx, ant[1], BLOCO, BLOCO);
+      for (let yy = Math.min(ant[1], y); yy <= Math.max(ant[1], y); yy += BLOCO) c.fillRect(x, yy, BLOCO, BLOCO);
+    }
+    c.fillStyle = "#000"; c.fillRect(x - 4, y - 4, 12, 12); c.fillStyle = COR(cor); c.fillRect(x - 2, y - 2, 8, 8);
+    ant = [x, y];
+  });
+  dicas(cv, g, serie, (b) => `${campo === "lat_p50" ? "latência" : campo}: ${b[campo] == null ? "—" : fmt(b[campo])}`);
+}
+function rotuloTempo(iso) {
+  const d = new Date(iso);
+  return estado.periodo === "7d" ? d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + String(d.getHours()).padStart(2, "0") + "h"
+    : d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+function dicas(cv, g, serie, texto) {
+  const dica = cv.parentElement.querySelector(".dica");
+  cv.onmousemove = (e) => {
+    const r = cv.getBoundingClientRect(), x = e.clientX - r.left;
+    const i = Math.floor((x - g.x0) / (g.w / serie.length));
+    if (i < 0 || i >= serie.length) { dica.style.display = "none"; return; }
+    dica.innerHTML = `<b>${rotuloTempo(serie[i].ini)}</b><br>${texto(serie[i])}`;
+    dica.style.display = "block";
+    dica.style.left = Math.min(x + 12, r.width - dica.offsetWidth) + "px"; dica.style.top = (e.clientY - r.top - 50) + "px";
+  };
+  cv.onmouseleave = () => { dica.style.display = "none"; };
+}
+
+/* ---------- estado ---------- */
+const estado = {
+  pagina: "visao",
+  periodo: (() => { try { return localStorage.getItem("gw-periodo") || "24h"; } catch { return "24h"; } })(),
+  rota: "geral", dados: null, detalhe: null,
+};
+
+/* ---------- páginas ---------- */
+function visao(d) {
+  const r = d.resumo, taxa = r.requisicoes ? Math.round(100 * r.ok / r.requisicoes) : null;
+  const card = (cls, rot, val, sub) => `<div class="caixa num ${cls}"><div class="rot">${rot}</div><div class="val">${val}</div><div class="sub">${sub}</div></div>`;
+  $("numeros").innerHTML = [
+    card("c-azul", "Requisições", mil(r.requisicoes), `${r.fallback} com reserva, ${r.erro} com erro`),
+    card("c-rosa", "Tokens", mil(r.tokens_entrada + r.tokens_saida), `${mil(r.tokens_entrada)} entrada, ${mil(r.tokens_saida)} saída`),
+    card("c-amarelo", "Latência p50", ms(r.lat_p50), `p95 ${ms(r.lat_p95)}`),
+    card("c-verde", "Sucesso", taxa == null ? "—" : taxa + "%", `${r.ok} de ${r.requisicoes}`),
+    card("c-laranja", "Protegidos", mil(r.protegidos), "dados que não saíram"),
+    card("c-pessego", "Custo", "$0,00", "só modelo grátis"),
+  ].join("");
+  barras("g-req", d.serie, [["ok", "--verde", "ok"], ["fallback", "--laranja", "com reserva"], ["erro", "--vermelho", "erro"]], (v) => mil(Math.round(v)));
+  barras("g-tok", d.serie, [["tok_in", "--azul", "entrada"], ["tok_out", "--rosa", "saída"]], (v) => mil(Math.round(v)));
+  linha("g-lat", d.serie, "lat_p50", "--amarelo", ms);
+  const maxR = Math.max(1, ...d.top_modelos.map((m) => m.req));
+  $("top-modelos").innerHTML = d.top_modelos.length ? `<table class="top"><tbody>${d.top_modelos.map((m) => `<tr>
+      <td><div class="mod">${esc(modelo(m.nome).split("/").pop())}</div><div class="prov">${esc(provDe(m.nome))}</div></td>
+      <td>${blocos(m.req / maxR, "var(--azul)", 6)}${m.req}<span class="sub-cel">${ms(m.lat_p50)}</span></td></tr>`).join("")}</tbody></table>`
+    : `<div class="vazio">Nenhuma requisição no período.</div>`;
+}
+
+function atividade(d) {
+  const sel = $("f-rota"), rotas = [...new Set(d.atividade.map((x) => x.rota))].sort();
+  const atual = sel.value;
+  sel.innerHTML = `<option value="">Todas as rotas</option>` + rotas.map((r) => `<option value="${esc(r)}">${esc(r.startsWith("m:") ? "direto: " + modelo(r) : r)}</option>`).join("");
+  sel.value = rotas.includes(atual) ? atual : "";
+  const fs = $("f-status").value, fr = sel.value, fb = $("f-busca").value.trim().toLowerCase();
+  const linhas = d.atividade.filter((x) => {
+    const [st] = statusDe(x);
+    if (fs && st !== (fs === "fallback" ? "reserva" : fs)) return false;
+    if (fr && x.rota !== fr) return false;
+    if (fb && !`${x.atendeu} ${x.escolhido} ${x.agente}`.toLowerCase().includes(fb)) return false;
+    return true;
+  });
+  $("f-conta").textContent = `${linhas.length} de ${d.atividade.length}`;
+  $("t-atividade").innerHTML = linhas.map((x, i) => {
+    const [st, cls] = statusDe(x);
+    const nome = x.atendeu || x.escolhido;
+    const tipos = Object.entries(x.mascarados || {});
+    const prot = tipos.slice(0, 2).map(([t, n]) => `<span class="chip">${esc(NOME_TIPO[t] || t)}${n > 1 ? "×" + n : ""}</span>`).join("")
+      + (tipos.length > 2 ? `<span class="fraco">+${tipos.length - 2}</span>` : "") || `<span class="fraco">—</span>`;
+    const tok = x.tokens_entrada != null ? `${mil(x.tokens_entrada)} → ${mil(x.tokens_saida)}` : `<span class="fraco">—</span>`;
+    return `<tr class="clicavel" tabindex="0" data-i="${d.atividade.indexOf(x)}">
+      <td class="fraco">${quando(x.ts)}</td>
+      <td><div class="mod">${esc(modelo(nome).split("/").pop() || "—")}</div><div class="prov">${esc(provDe(nome))}</div></td>
+      <td>${esc(x.rota && x.rota.startsWith("m:") ? "direto" : x.rota)}</td>
+      <td class="fraco">${esc(x.agente || "—")}</td><td>${tok}</td>
+      <td class="${x.latencia_ms > 8000 ? "alerta" : ""}">${x.status === "ok" ? ms(x.latencia_ms) : "—"}${x.ttft_ms ? `<span class="sub-cel">1º token ${ms(x.ttft_ms)}</span>` : ""}</td>
+      <td>${x.tentativas || 1}</td><td>${prot}</td>
+      <td><span class="selo ${cls}">${st}</span></td></tr>`;
+  }).join("") || `<tr><td colspan="9" class="vazio">Nada encontrado. Aponte um agente para http://127.0.0.1:4000/v1 ou mude o filtro.</td></tr>`;
+  document.querySelectorAll("#t-atividade tr.clicavel").forEach((tr) => {
+    const abre = () => abrirDetalhe(d.atividade[+tr.dataset.i]);
+    tr.onclick = abre; tr.onkeydown = (e) => { if (e.key === "Enter") abre(); };
+  });
+}
+
+function abrirDetalhe(x) {
+  estado.detalhe = x;
+  const [st, cls] = statusDe(x);
+  const ordem = x.ordem || [];
+  const passos = ordem.map((n) => {
+    const atendeu = n === x.atendeu, depois = x.atendeu && ordem.indexOf(n) > ordem.indexOf(x.atendeu);
+    const marca = atendeu ? `<span class="selo ok">atendeu</span>` : depois ? `<span class="selo cinza">não precisou</span>` : `<span class="selo ruim">falhou</span>`;
+    return `<li>${marca}<span><span class="mod">${esc(modelo(n))}</span> <span class="prov">${esc(provDe(n))}</span></span></li>`;
+  }).join("");
+  const prot = Object.entries(x.mascarados || {}).map(([t, n]) => `<span class="chip">${esc(NOME_TIPO[t] || t)} ${n}</span>`).join("") || "nenhum";
+  $("gaveta").innerHTML = `<button class="botao fechar" id="fechar">fechar</button><h3>Requisição</h3>
+    <dl><dt>Quando</dt><dd>${quando(x.ts)}</dd><dt>Status</dt><dd><span class="selo ${cls}">${st}</span></dd>
+    <dt>Rota</dt><dd>${esc(x.rota)}</dd><dt>Agente</dt><dd>${esc(x.agente || "—")}</dd>
+    <dt>Latência</dt><dd>${ms(x.latencia_ms)}</dd><dt>1º token</dt><dd>${ms(x.ttft_ms)}</dd>
+    <dt>Tokens</dt><dd>${x.tokens_entrada != null ? `${x.tokens_entrada} entrada, ${x.tokens_saida} saída` : "—"}</dd>
+    <dt>Streaming</dt><dd>${x.stream ? "sim" : "não"}</dd><dt>Ferramentas</dt><dd>${x.tools ? "sim" : "não"}</dd>
+    <dt>Protegido</dt><dd>${prot}</dd></dl>
+    <h3>Fila de tentativas</h3><ol class="passos">${passos}</ol>
+    ${x.erro ? `<h3>Erro</h3><div class="erro-caixa">${esc(x.erro)}</div>` : ""}`;
+  $("gaveta").classList.add("aberta"); $("gaveta").setAttribute("aria-hidden", "false");
+  $("fechar").onclick = fecharDetalhe; $("fechar").focus();
+}
+function fecharDetalhe() { estado.detalhe = null; $("gaveta").classList.remove("aberta"); $("gaveta").setAttribute("aria-hidden", "true"); }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharDetalhe(); });
+
+function statusModelo(m) {
+  if (m.espera_ate) return `<span class="selo alerta">espera ${voltaEm(m.espera_ate)}</span> <span class="prov">${esc(MOTIVO[m.motivo] || m.motivo || "")}</span>`;
+  return `<span class="selo ok">ativo</span>`;
+}
+function modelos(d) {
+  $("t-modelos").innerHTML = d.modelos.map((m) => `<tr>
+    <td><div class="mod">${esc(m.modelo)}</div><div class="prov">${m.fonte_nota === "manual" ? "nota manual" : "nota por benchmarks"}</div></td>
+    <td>${esc(m.provedor)}</td><td>${m.contexto ? mil(m.contexto) : "—"}</td>
+    <td>${blocos(m.nota / 100, "var(--amarelo)")}${m.nota}</td>
+    <td class="${m.lat_ms > 8000 ? "alerta" : ""}">${m.lat_ms ? ms(m.lat_ms) : '<span class="fraco">sem medida</span>'}</td>
+    <td>${m.confiabilidade != null ? Math.round(m.confiabilidade * 100) + "%" : "—"}</td>
+    <td>${m.tools === true ? '<span class="ok">provada</span>' : m.tools === false ? '<span class="ruim">falhou</span>' : '<span class="fraco">não testada</span>'}</td>
+    <td>${m.visao ? '<span class="info">sim</span>' : '<span class="fraco">não</span>'}</td>
+    <td>${m.uso_hoje}</td><td>${statusModelo(m)}</td></tr>`).join("");
+}
+
+function provedores(d) {
+  $("provs").innerHTML = d.provedores.map((p) => {
+    const lamp = `<span class="lampada ${p.ativo ? "" : "off"}" style="${p.ativo ? "" : "animation:none"}"></span>`;
+    const cota = p.rpd ? `${blocos(p.uso_hoje / p.rpd, p.uso_hoje / p.rpd > .85 ? "var(--vermelho)" : "var(--verde)", 12)}${p.uso_hoje}/${p.rpd}` : `${p.uso_hoje} <span class="fraco">sem cota diária</span>`;
+    return `<div class="caixa bloco prov-card"><h3>${lamp}${esc(p.nome)}</h3>
+      <div class="linha"><span class="fraco">Chave</span><span>${p.ativo ? '<span class="ok">configurada</span>' : p.cadastro ? `<a href="${esc(p.cadastro)}" target="_blank" rel="noopener">criar chave</a>` : '<span class="fraco">defina GW_LOCAL_URL</span>'}</span></div>
+      <div class="linha"><span class="fraco">Modelos</span><span>${p.modelos}${p.em_espera ? ` <span class="alerta">(${p.em_espera} em espera)</span>` : ""}</span></div>
+      <div class="linha"><span class="fraco">Uso hoje</span><span>${cota}</span></div>
+      <div class="linha"><span class="fraco">Limite</span><span>${p.rpm ? p.rpm + "/min" : "—"}</span></div>
+      <div class="linha"><span class="fraco">No período</span><span>${p.req_periodo} atendidas, <span class="${p.erros_periodo ? "ruim" : ""}">${p.erros_periodo} erro(s)</span></span></div>
+      <div class="linha"><span class="fraco">Endereço</span><span class="prov">${esc((p.api_base || "—").replace("https://", ""))}</span></div></div>`;
+  }).join("");
+}
+
+function roteamento(d) {
+  const rotas = Object.keys(d.rotas).filter((r) => d.rotas[r].ranking.length);
+  if (!rotas.includes(estado.rota)) estado.rota = rotas[0];
+  $("rotas").innerHTML = rotas.map((r) => `<button data-r="${r}" class="${r === estado.rota ? "on" : ""}">${r}</button>`).join("");
+  $("rotas").querySelectorAll("button").forEach((b) => b.onclick = () => { estado.rota = b.dataset.r; render(); });
+  const info = d.rotas[estado.rota];
+  const pesos = { qualidade: "85% qualidade, 15% velocidade", equilibrado: "60% qualidade, 40% velocidade", velocidade: "25% qualidade, 75% velocidade" }[info.perfil] || info.perfil;
+  $("rota-info").textContent = `perfil ${info.perfil}: ${pesos}${info.reserva ? `, reserva na rota ${info.reserva}` : ""}`;
+  const max = Math.max(...info.ranking.map((a) => a.pontuacao), 0.0001);
+  let pos = 0;
+  $("t-rota").innerHTML = info.ranking.map((a) => {
+    if (!a.fora) pos++;
+    const sit = a.espera_ate ? `<span class="selo alerta">espera ${voltaEm(a.espera_ate)}</span>` : a.fora ? `<span class="selo cinza">${esc(a.fora)}</span>` : pos === 1 ? `<span class="selo ok">1ª escolha</span>` : `<span class="selo info">reserva ${pos - 1}</span>`;
+    return `<tr><td>${a.fora ? "—" : pos}</td>
+      <td><div class="mod">${esc(a.modelo)}</div><div class="prov">${esc(a.provedor)}</div></td>
+      <td>${blocos(a.nota / 100, "var(--amarelo)", 8)}${a.nota}</td>
+      <td>${a.vel_medida ? ms(a.lat_ms) : '<span class="fraco">sem medida</span>'}</td>
+      <td>${Math.round(a.confiabilidade * 100)}%</td>
+      <td>${a.tools === true ? '<span class="ok">provada</span>' : a.tools === false ? '<span class="ruim">falhou</span>' : '<span class="fraco">—</span>'}</td>
+      <td>${blocos(a.pontuacao / max, pos === 1 && !a.fora ? "var(--verde)" : "var(--azul)", 12)}${Math.round(a.pontuacao * 100)}</td>
+      <td>${sit}</td></tr>`;
+  }).join("");
+}
+
+function protecao(d) {
+  const m = Object.entries(d.resumo.mascarados || {}).sort((a, b) => b[1] - a[1]);
+  const total = m.reduce((s, [, n]) => s + n, 0), max = Math.max(1, ...m.map(([, n]) => n));
+  $("prot-total").textContent = mil(total);
+  $("prot-sub").textContent = total ? "ocorrências trocadas por marcador antes de ir pro provedor e devolvidas na resposta" : "nada sensível passou pelo gateway no período";
+  $("prot-tipos").innerHTML = m.length ? `<table><tbody>${m.map(([t, n]) => `<tr><td>${esc(NOME_TIPO[t] || t)}</td><td>${blocos(n / max, "var(--rosa)", 14)}${n}</td></tr>`).join("")}</tbody></table>` : "";
+  const p = d.politica;
+  $("politica").innerHTML = [
+    ["Documentos (CPF, CNPJ, placa…)", '<span class="ok">mascarados</span>'],
+    ["Senhas e tokens", '<span class="ok">mascarados</span>'],
+    ["Nomes de pessoa", p.ner ? '<span class="ok">mascarados</span>' : '<span class="alerta">detecção desligada</span>'],
+    ["Imagens, arquivos e áudio", p.imagens === "permitir" ? '<span class="alerta">liberados</span>' : '<span class="ok">bloqueados</span>'],
+    ["Bloquear em vez de mascarar", p.bloquear.length ? esc(p.bloquear.join(", ")) : '<span class="fraco">nenhum tipo</span>'],
+    ["Rotas fora do chat", '<span class="ok">fechadas (403)</span>'],
+    ["Conteúdo das mensagens no log", '<span class="ok">nunca gravado</span>'],
+  ].map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join("");
+}
+
+
+/* ---------- chat ---------- */
+const chat = {
+  harness: "hermes",
+  estado: {}, ocupado: false, conversas: { hermes: [] },
+  sessoes: { hermes: "painel-" + Math.random().toString(36).slice(2, 10) },
+  timer: null, ativo: false,
+};
+const POST = (url, corpo) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-GW-Painel": "1" }, body: JSON.stringify(corpo) });
+
+function chatAtivar() {
+  if (!chat.ativo) {
+    chat.ativo = true;
+    document.querySelectorAll("#chat-harness button").forEach((b) => b.onclick = () => chatTrocar(b.dataset.h));
+    $("chat-enviar").onclick = chatEnviar;
+    $("chat-texto").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); chatEnviar(); } };
+    $("chat-texto").oninput = (e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(180, e.target.scrollHeight) + "px"; };
+    $("chat-nova").onclick = () => { chat.conversas[chat.harness] = []; chat.sessoes[chat.harness] = "painel-" + Math.random().toString(36).slice(2, 10); chatDesenha(); };
+    $("chat-desligar").onclick = async () => { await POST("/painel/chat/desligar", {}); chatEstado(); };
+    chatDesenha();
+  }
+  if (!chat.timer) chat.timer = setInterval(() => { if (estado.pagina === "chat") chatEstado(); }, 2000);
+  chatEstado();
+}
+
+async function chatEstado() {
+  try { chat.estado = await (await fetch("/painel/chat/estado", { cache: "no-store" })).json(); } catch { return; }
+  const e = chat.estado[chat.harness] || {};
+  document.querySelectorAll("#chat-harness button").forEach((b) => b.classList.toggle("on", b.dataset.h === chat.harness));
+  const lamp = $("chat-lamp");
+  lamp.className = "lampada" + (e.status === "no_ar" ? "" : e.status === "ligando" ? " ligando" : " off");
+  const seg = e.desde ? Math.round(Date.now() / 1000 - e.desde) : 0;
+  $("chat-estado").textContent = !e.instalado ? `${e.nome || chat.harness} não instalado`
+    : e.status === "no_ar" ? `${e.nome} no ar (porta ${e.porta})`
+    : e.status === "ligando" ? `ligando ${e.nome}… ${seg} s`
+    : e.status === "erro" ? `erro: ${e.erro}` : `${e.nome || chat.harness} parado`;
+  const nome = e.nome || chat.harness;
+  $("chat-info").innerHTML = `O <b>${esc(nome)}</b> usa este gateway como modelo (rota <b>geral</b>): nome, CPF, placa, segredo e afins são mascarados antes de ir pro provedor.`
+    + (" Ferramentas rodam na sua máquina; todo comando perigoso pede aprovação aqui.");
+  const pronto = e.status === "no_ar" && !chat.ocupado;
+  $("chat-enviar").disabled = !pronto;
+  $("chat-enviar").textContent = chat.ocupado ? "..." : e.status === "no_ar" ? "Enviar" : e.status === "ligando" ? "Ligando" : "Ligar";
+  if (e.status !== "no_ar" && e.status !== "ligando") { $("chat-enviar").disabled = !e.instalado; $("chat-enviar").onclick = () => chatTrocar(chat.harness); }
+  else $("chat-enviar").onclick = chatEnviar;
+}
+
+async function chatTrocar(h) {
+  chat.harness = h; try { localStorage.setItem("gw-harness", h); } catch {}
+  chatDesenha();
+  const r = await POST("/painel/chat/harness", { nome: h });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); $("chat-estado").textContent = "erro: " + (j.erro || r.status); }
+  chatEstado();
+}
+
+function md(txt) {
+  const partes = String(txt || "").split(/```/);
+  return partes.map((p, i) => {
+    if (i % 2) return `<pre>${esc(p.replace(/^[a-z0-9]*\n/i, ""))}</pre>`;
+    return esc(p).replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
+  }).join("");
+}
+
+function chatDesenha() {
+  const box = $("chat-msgs"), conv = chat.conversas[chat.harness];
+  if (!conv.length) {
+    const nome = "Hermes";
+    box.innerHTML = `<div class="vazio-chat"><h3>${nome}</h3><p>O agente da Nous Research, com terminal, arquivos, web e skills. Ele pensa usando o gateway, então tudo aparece em Atividade.</p></div>`;
+    return;
+  }
+  box.innerHTML = conv.map((m, i) => m.papel === "eu"
+    ? `<div class="msg eu"><div class="quem">VOCÊ</div><div class="corpo">${esc(m.texto)}</div></div>`
+    : `<div class="msg ia" data-i="${i}">${chatMsgIA(m)}</div>`).join("");
+  ligaCards(box);
+  box.scrollTop = box.scrollHeight;
+}
+
+function chatMsgIA(m) {
+  const nome = "HERMES";
+  let h = `<div class="quem">${nome}${m.vivo ? ' <span class="fraco" style="font:13px var(--texto)">pensando…</span>' : ""}</div>`;
+  if (m.raciocinio) h += `<details class="pensou"><summary>raciocínio</summary><div>${esc(m.raciocinio)}</div></details>`;
+  for (const f of m.ferramentas) {
+    const st = f.fase === "inicio" ? '<span class="alerta">rodando…</span>' : f.erro ? '<span class="ruim">erro</span>' : '<span class="ok">ok</span>';
+    h += `<details class="ferr"><summary>⚙ ${esc(f.nome)} ${esc((f.args || "").slice(0, 70))} · ${st}</summary><pre>${esc(f.args || "")}${f.resultado ? "\n\n→ " + esc(f.resultado) : ""}</pre></details>`;
+  }
+  for (const c of m.cards) {
+    if (c.tipo === "aprovacao") {
+      h += `<div class="card-acao"><h4>APROVAR AÇÃO?</h4><div style="margin-bottom:6px">${esc(c.descricao)}</div>${c.detalhe ? `<pre>${esc(c.detalhe)}</pre>` : ""}
+        ${c.decidido ? `<span class="${c.decidido === "aprovado" ? "ok" : "ruim"}">${c.decidido}</span>`
+        : `<div class="bts"><button class="botao bt-sim" data-card="${c.id}" data-v="1">Aprovar</button><button class="botao bt-nao" data-card="${c.id}" data-v="0">Negar</button></div>`}</div>`;
+    } else {
+      h += `<div class="card-acao"><h4>O AGENTE PERGUNTA</h4>${c.contexto ? `<div class="fraco" style="margin-bottom:6px">${esc(c.contexto).slice(0, 400)}</div>` : ""}
+        ${c.perguntas.map((q, k) => `<div style="margin-bottom:4px">${esc(q)}</div>${c.decidido ? "" : `<input data-q="${c.id}-${k}">`}`).join("")}
+        ${c.decidido ? '<span class="ok">respondido</span>' : `<div class="bts"><button class="botao bt-sim" data-card="${c.id}" data-v="r">Responder</button></div>`}</div>`;
+    }
+  }
+  h += `<div class="corpo">${md(m.texto)}${m.vivo ? '<span class="cursor"></span>' : ""}</div>`;
+  if (m.erro) h += `<div class="ruim" style="margin-top:8px">${esc(m.erro)}</div>`;
+  if (m.uso) h += `<div class="rodape-msg">${m.uso.in ?? "—"} tokens de entrada · ${m.uso.out ?? "—"} de saída${m.duracao ? ` · ${(m.duracao).toFixed(1).replace(".", ",")} s` : ""}</div>`;
+  return h;
+}
+
+function ligaCards(raiz) {
+  raiz.querySelectorAll("[data-card]").forEach((b) => b.onclick = async () => {
+    const conv = chat.conversas[chat.harness];
+    for (const m of conv) for (const c of (m.cards || [])) {
+      if (c.id !== b.dataset.card || c.decidido) continue;
+      const corpo = { harness: m.harness, tipo: c.tipo, id: c.id, ref: c.ref };
+      if (c.tipo === "aprovacao") corpo.aprovar = b.dataset.v === "1";
+      else corpo.respostas = c.perguntas.map((_, k) => (raiz.querySelector(`[data-q="${c.id}-${k}"]`) || {}).value || "");
+      const r = await POST("/painel/chat/decidir", corpo);
+      c.decidido = !r.ok ? "falhou ao enviar" : c.tipo === "aprovacao" ? (corpo.aprovar ? "aprovado" : "negado") : "respondido";
+      chatDesenha();
+    }
+  });
+}
+
+async function chatEnviar() {
+  const txt = $("chat-texto").value.trim();
+  const e = chat.estado[chat.harness] || {};
+  if (!txt || chat.ocupado || e.status !== "no_ar") return;
+  const h = chat.harness, conv = chat.conversas[h];
+  conv.push({ papel: "eu", texto: txt });
+  const m = { papel: "ia", harness: h, texto: "", raciocinio: "", ferramentas: [], cards: [], vivo: true };
+  conv.push(m);
+  $("chat-texto").value = ""; $("chat-texto").style.height = "auto";
+  chat.ocupado = true; chatDesenha(); chatEstado();
+  let ultimo = 0;
+  const redesenha = (forcar) => {
+    if (!forcar && Date.now() - ultimo < 80) return; ultimo = Date.now();
+    if (chat.harness !== h) return;
+    const el = document.querySelector(`#chat-msgs .msg.ia[data-i="${conv.indexOf(m)}"]`);
+    if (el) { el.innerHTML = chatMsgIA(m); ligaCards(el); const box = $("chat-msgs"); box.scrollTop = box.scrollHeight; }
+  };
+  try {
+    const r = await POST("/painel/chat/enviar", { harness: h, mensagem: txt, sessao: chat.sessoes[h] });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.erro || `HTTP ${r.status}`); }
+    const leitor = r.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await leitor.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let k;
+      while ((k = buf.indexOf("\n\n")) >= 0) {
+        const bloco = buf.slice(0, k); buf = buf.slice(k + 2);
+        if (!bloco.startsWith("data: ")) continue;
+        const ev = JSON.parse(bloco.slice(6));
+        if (ev.t === "texto") m.texto += ev.d;
+        else if (ev.t === "raciocinio") m.raciocinio += ev.d;
+        else if (ev.t === "ferramenta") {
+          const f = m.ferramentas.find((x) => x.id === ev.id && x.fase === "inicio");
+          if (f && ev.fase === "fim") Object.assign(f, { fase: "fim", resultado: ev.resultado, erro: ev.erro, args: f.args || ev.args });
+          else m.ferramentas.push(ev);
+        } else if (ev.t === "aprovacao" || ev.t === "pergunta") m.cards.push({ ...ev, tipo: ev.t });
+        else if (ev.t === "fim") { m.uso = ev.uso; m.duracao = ev.duracao; if (!m.texto && ev.final) m.texto = ev.final; }
+        else if (ev.t === "erro") m.erro = ev.msg;
+        redesenha(ev.t !== "texto" && ev.t !== "raciocinio");
+      }
+    }
+  } catch (err) { m.erro = "Falhou: " + err.message; }
+  m.vivo = false; chat.ocupado = false; redesenha(true); chatEstado();
+}
+
+
+/* ---------- áudio ---------- */
+const au = { modo: "voz", motor: { voz: null, musica: null }, estado: { motores: {}, tarefas: [] }, timer: null, ativo: false, tocando: new Set() };
+
+function audioAtivar() {
+  if (!au.ativo) {
+    au.ativo = true;
+    document.querySelectorAll("#au-modo button").forEach((b) => b.onclick = () => { au.modo = b.dataset.m; audioDesenha(); });
+    $("au-texto").oninput = audioConta;
+    $("au-vel").oninput = (e) => { $("au-vel-v").textContent = String(e.target.value).replace(".", ",") + "×"; audioConta(); };
+    $("au-dur").oninput = (e) => { $("au-dur-v").textContent = e.target.value + " s"; };
+    $("au-gerar").onclick = audioGerar;
+    $("au-descarregar").onclick = async () => {
+      $("au-descarregar").disabled = true;
+      const r = await POST("/painel/audio/desligar", {});
+      if (!r.ok) { const j = await r.json().catch(() => ({})); $("au-motor-estado").textContent = "erro: " + (j.erro || r.status); }
+      audioAtualiza();
+    };
+  }
+  if (!au.timer) au.timer = setInterval(() => { if (estado.pagina === "audio") audioAtualiza(); }, 1500);
+  audioAtualiza();
+}
+
+async function audioAtualiza() {
+  try { au.estado = await (await fetch("/painel/audio/estado", { cache: "no-store" })).json(); } catch { return; }
+  audioDesenha();
+}
+
+function audioConta() {
+  const n = $("au-texto").value.length, vel = parseFloat($("au-vel").value) || 1;
+  const seg = n / 15 / vel;  // ~15 caracteres por segundo de fala
+  $("au-conta").textContent = n ? `${n.toLocaleString("pt-BR")} caracteres, uns ${seg < 90 ? Math.round(seg) + " s" : Math.round(seg / 60) + " min"} de áudio` : "";
+}
+
+function audioDesenha() {
+  document.querySelectorAll("#au-modo button").forEach((b) => b.classList.toggle("on", b.dataset.m === au.modo));
+  $("au-form-voz").hidden = au.modo !== "voz"; $("au-form-musica").hidden = au.modo !== "musica";
+  const ms = Object.entries(au.estado.motores || {}).filter(([, m]) => (m.tipo || "voz") === au.modo);
+  if (!au.motor[au.modo] || !ms.some(([n]) => n === au.motor[au.modo])) au.motor[au.modo] = (ms.find(([, m]) => m.padrao) || ms[0] || [null])[0];
+  $("au-motores").innerHTML = ms.length ? ms.map(([n, m]) => {
+    const lamp = `<span class="lampada ${m.status === "no_ar" ? "" : m.status === "ligando" ? "ligando" : "off"}" style="${m.status === "no_ar" || m.status === "ligando" ? "" : "animation:none"}"></span>`;
+    const tags = (m.tags || []).map((t) => `<span class="chip">${esc(t)}</span>`).join("");
+    return `<button class="motor ${n === au.motor[au.modo] ? "on" : ""}" data-n="${esc(n)}"><h4>${lamp}${esc(m.nome || n)}</h4>
+      <p>${esc(m.descricao || "")}</p><div class="tags">${tags}${m.instalado ? "" : '<span class="chip" style="background:var(--marrom)">não instalado</span>'}</div></button>`;
+  }).join("") : `<div class="vazio">Nenhum motor de ${au.modo === "voz" ? "voz" : "música"} instalado ainda.</div>`;
+  $("au-motores").querySelectorAll(".motor").forEach((b) => b.onclick = () => { au.motor[au.modo] = b.dataset.n; audioDesenha(); });
+  const atual = (au.estado.motores || {})[au.motor[au.modo]] || {};
+  const st = atual.status;
+  $("au-motor-estado").textContent = !atual.nome ? "" : st === "no_ar" ? `${atual.nome} carregado` : st === "ligando" ? `carregando ${atual.nome}…`
+    : st === "erro" ? `erro: ${atual.erro}` : `${atual.nome} desligado (liga sozinho ao gerar)`;
+  // Qualquer motor na memória (não só o selecionado) pode ser descarregado; no meio de uma geração, não.
+  const carregados = Object.values(au.estado.motores || {}).filter((m) => m.status === "no_ar" || m.status === "ligando");
+  const gerando = (au.estado.tarefas || []).some((t) => t.status === "na_fila" || t.status === "gerando");
+  const bd = $("au-descarregar");
+  bd.hidden = !carregados.length;
+  bd.disabled = gerando;
+  bd.title = gerando ? "Espere a geração terminar ou cancele" : `Tira ${carregados.map((m) => m.nome).join(", ")} da memória agora`;
+  if (au.modo === "voz") {
+    const vozes = (atual.info && atual.info.vozes) || atual.vozes || [];
+    const sel = $("au-voz"), antes = sel.value;
+    const opcoes = vozes.map((v) => typeof v === "string" ? { id: v, nome: v } : v);
+    if (sel.dataset.chave !== au.motor.voz + opcoes.length) {
+      sel.innerHTML = opcoes.map((v) => `<option value="${esc(v.id)}">${esc(v.nome || v.id)}</option>`).join("") || '<option value="">padrão</option>';
+      sel.dataset.chave = au.motor.voz + opcoes.length;
+      if (opcoes.some((v) => v.id === antes)) sel.value = antes; else if (atual.voz_padrao) sel.value = atual.voz_padrao;
+    }
+  }
+  const comLetra = au.modo === "musica" && atual.letra !== false;
+  $("au-cantada").closest(".campo").hidden = !comLetra;
+  $("au-letra").closest(".campo").hidden = !comLetra || $("au-cantada").value === "inst";
+  $("au-cantada").onchange = audioDesenha;
+  $("au-prompt").placeholder = atual.letra === false
+    ? "Descreva em inglês: lofi hip hop, mellow piano, soft drums, warm vinyl, 85 bpm"
+    : "Ex.: samba-rock instrumental, guitarra limpa, baixo groovado, 110 bpm, clima de fim de tarde";
+  $("au-gerar").disabled = !atual.instalado;
+  $("au-gerar").textContent = au.modo === "voz" ? "Gerar áudio" : "Gerar música";
+  audioTarefas();
+}
+
+function audioTarefas() {
+  const ts = au.estado.tarefas || [];
+  const prontos = ts.filter((t) => t.status === "pronto");
+  const total = prontos.reduce((a, t) => a + (t.segundos || 0), 0);
+  $("au-resumo").textContent = prontos.length ? `${prontos.length} arquivo(s), ${total < 120 ? Math.round(total) + " s" : Math.round(total / 60) + " min"} no total` : "";
+  const box = $("au-tarefas");
+  // não redesenha o player que está tocando
+  const html = ts.map((t) => {
+    const m = (au.estado.motores || {})[t.motor] || {};
+    const dur = t.segundos < 120 ? `${t.segundos.toFixed(1).replace(".", ",")} s` : `${Math.floor(t.segundos / 60)} min ${Math.round(t.segundos % 60)} s`;
+    const st = { pronto: '<span class="selo ok">pronto</span>', gerando: '<span class="selo info">gerando</span>', na_fila: '<span class="selo cinza">na fila</span>',
+      erro: '<span class="selo ruim">erro</span>', cancelado: '<span class="selo alerta">cancelado</span>' }[t.status] || t.status;
+    const prog = t.status === "gerando" && t.total ? `<div style="margin-top:6px">${blocos(t.feito / t.total, "var(--amarelo)", 20)}${t.feito}/${t.total} trechos, ${dur}</div>` : "";
+    const player = (t.status === "pronto" || (t.status === "cancelado" && t.segundos)) ? `<audio controls preload="none" src="/painel/audio/arquivo/${t.id}.ogg"></audio>` : "";
+    const acoes = [
+      player ? `<a href="/painel/audio/arquivo/${t.id}.ogg" download="audio-${t.id}.ogg">baixar .ogg</a>` : "",
+      t.status === "gerando" || t.status === "na_fila" ? `<button class="botao" data-c="${t.id}">cancelar</button>` : "",
+      t.status !== "gerando" ? `<button class="botao" data-a="${t.id}">apagar</button>` : "",
+    ].join("");
+    return `<div class="tarefa" data-t="${t.id}" data-s="${t.status}-${t.feito}"><div class="t1"><span class="tit">${esc(t.titulo)}</span>${st}</div>
+      <div class="meta">${esc(m.nome || t.motor)}${t.voz ? " · voz " + esc(t.voz) : ""} · ${dur} · ${new Date(t.criado * 1000).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</div>
+      ${prog}${t.erro ? `<div class="ruim" style="margin-top:6px">${esc(t.erro)}</div>` : ""}${player}<div class="acoes-t">${acoes}</div></div>`;
+  }).join("") || '<div class="vazio">Nada gerado ainda.</div>';
+  const assinatura = ts.map((t) => `${t.id}:${t.status}:${t.feito}`).join("|");
+  const tocando = [...box.querySelectorAll("audio")].some((a) => !a.paused);
+  if (box.dataset.ass !== assinatura && !tocando) { box.innerHTML = html; box.dataset.ass = assinatura; }
+  box.querySelectorAll("[data-c]").forEach((b) => b.onclick = async () => { await POST("/painel/audio/cancelar", { id: b.dataset.c }); audioAtualiza(); });
+  box.querySelectorAll("[data-a]").forEach((b) => b.onclick = async () => { await POST("/painel/audio/apagar", { id: b.dataset.a }); audioAtualiza(); });
+}
+
+async function audioGerar() {
+  const motor = au.motor[au.modo];
+  const corpo = au.modo === "voz"
+    ? { motor, texto: $("au-texto").value, voz: $("au-voz").value, velocidade: parseFloat($("au-vel").value) }
+    : { motor, texto: $("au-prompt").value, letra: $("au-cantada").value === "inst" ? "" : $("au-letra").value,
+        idioma: $("au-cantada").value === "inst" ? null : $("au-cantada").value, instrumental: $("au-cantada").value === "inst",
+        duracao: parseFloat($("au-dur").value), semente: $("au-semente").value ? parseInt($("au-semente").value, 10) : null };
+  if (!corpo.texto.trim()) { $("au-motor-estado").textContent = au.modo === "voz" ? "Escreva o texto primeiro." : "Descreva o estilo primeiro."; return; }
+  $("au-gerar").disabled = true;
+  const r = await POST("/painel/audio/gerar", corpo);
+  if (!r.ok) { const j = await r.json().catch(() => ({})); $("au-motor-estado").textContent = "erro: " + (j.erro || r.status); }
+  $("au-gerar").disabled = false;
+  audioAtualiza();
+}
+
+/* ---------- navegação, período, atualização ---------- */
+function render() {
+  const d = estado.dados;
+  if (!d && estado.pagina !== "chat" && estado.pagina !== "audio") return;
+  const [, nome] = PAGINAS.find(([id]) => id === estado.pagina);
+  $("titulo").textContent = nome;
+  document.querySelectorAll(".pagina").forEach((p) => p.classList.toggle("ativa", p.id === "pg-" + estado.pagina));
+  document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("ativo", a.dataset.p === estado.pagina));
+  document.querySelectorAll("#periodo button").forEach((b) => b.classList.toggle("on", b.dataset.p === estado.periodo));
+  if (estado.pagina === "chat") { chatAtivar(); return; }
+  if (estado.pagina === "audio") { audioAtivar(); return; }
+  ({ visao, atividade, modelos, provedores, roteamento, protecao })[estado.pagina](d);
+}
+function lerHash() { const p = (location.hash.match(/#\/(\w+)/) || [])[1]; estado.pagina = PAGINAS.some(([id]) => id === p) ? p : "visao"; render(); }
+window.addEventListener("hashchange", lerHash);
+window.addEventListener("resize", () => { if (estado.pagina === "visao") render(); });
+document.querySelectorAll("#periodo button").forEach((b) => b.onclick = () => {
+  estado.periodo = b.dataset.p; try { localStorage.setItem("gw-periodo", estado.periodo); } catch {}
+  atualiza();
+});
+["f-status", "f-rota"].forEach((id) => $(id).onchange = render);
+$("f-busca").oninput = render;
+$("copiar").onclick = async () => {
+  try { await navigator.clipboard.writeText("http://127.0.0.1:4000/v1"); $("copiar").innerHTML = "<code>copiado!</code>"; }
+  catch { $("copiar").innerHTML = "<code>selecione e copie: 127.0.0.1:4000/v1</code>"; }
+  setTimeout(() => { $("copiar").innerHTML = "<code>http://127.0.0.1:4000/v1</code>"; }, 1500);
+};
+
+async function atualiza() {
+  try {
+    const r = await fetch(`/painel/dados?periodo=${estado.periodo}`, { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    estado.dados = await r.json();
+    $("lampada").className = "lampada"; $("estado").textContent = "no ar";
+    render();
+  } catch {
+    $("lampada").className = "lampada off"; $("estado").textContent = "gateway fora do ar";
+  }
+}
+lerHash(); atualiza(); setInterval(atualiza, 5000);
+</script>
+</body>
+</html>

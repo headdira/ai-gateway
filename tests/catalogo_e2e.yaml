@@ -1,0 +1,13 @@
+# Catálogo do e2e: um provedor falso local (GW_E2E_BASE) e quatro modelos.
+provedores:
+  falso: {prefixo: openai, chave: null, api_base_env: GW_E2E_BASE}
+pool:
+  - {provedor: falso, id: "bom-1", nota: 50, contexto: 100000}
+  - {provedor: falso, id: "erro-1", nota: 90, contexto: 100000}   # nota maior, mas sempre dá 500
+  - {provedor: falso, id: "novo-1", nota: 10, contexto: 100000}   # nunca provou tool call
+  - {provedor: falso, id: "xml-1", nota: 5, contexto: 100000}     # escreve a tool call como texto
+rotas:
+  teste: {perfil: qualidade, provedor: falso, ref_contem: bom}
+  inteligente: {perfil: qualidade, provedor: falso}
+  so-novo: {perfil: qualidade, provedor: falso, ref_contem: novo}
+fallbacks_por_pedido: 3

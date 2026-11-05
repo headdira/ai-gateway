@@ -1,0 +1,48 @@
+# Motores de áudio do painel. Cada um roda com o Python de audio/motores/mlx/.venv,
+# pesos em audio/modelos (baixados por audio/baixar_seguro.py, só safetensors).
+motores:
+  kokoro:
+    nome: Kokoro
+    tipo: voz
+    padrao: true
+    python: audio/motores/mlx/.venv/bin/python
+    descricao: "Rápido e estável para texto longo, 3 vozes pt-BR. Medido: 100 s de áudio em 12 s (1 h sai em uns 8 min)."
+    tags: [pt-BR, "82M", Apache-2.0, safetensors]
+    voz_padrao: pf_dora
+    vozes:
+      - {id: pf_dora, nome: "Dora (feminina)"}
+      - {id: pm_alex, nome: "Alex (masculina)"}
+      - {id: pm_santa, nome: "Santa (masculina, grave)"}
+  voxcpm2:
+    nome: VoxCPM2
+    tipo: voz
+    python: audio/motores/mlx/.venv/bin/python
+    descricao: "Voz descrita em texto, 48 kHz, mesma voz no texto todo (clona o 1º trecho). Lento: 31 s de áudio em 89 s (1 h levaria umas 3 h)."
+    tags: [português, "2B 8-bit", Apache-2.0, safetensors]
+    voz_padrao: feminina-calorosa
+    vozes:
+      - {id: feminina-calorosa, nome: "Feminina, calorosa"}
+      - {id: masculina-grave, nome: "Masculina, grave"}
+      - {id: narrador, nome: "Narrador de audiolivro"}
+      - {id: feminina-jovem, nome: "Feminina, jovem"}
+  acestep:
+    nome: ACE-Step 1.5
+    tipo: musica
+    padrao: true
+    letra: true
+    pasta: audio/motores/acestep
+    python: audio/motores/ace-step-src/.venv/bin/python
+    descricao: "Música CANTADA (português ou inglês) ou instrumental, estéreo 48 kHz. Ajustado pro M4: DiT em MLX 8 bits. Medido: carrega em ~1 min; 30 s em ~55 s, 4 min em ~3 min; pico ~13 GB."
+    tags: [canta pt/en, "2,4B 8-bit", MIT, safetensors]
+    env:
+      ACESTEP_MLX_VAE_FP16: "1"
+      PYTORCH_MPS_HIGH_WATERMARK_RATIO: "0.9"
+      PYTORCH_MPS_LOW_WATERMARK_RATIO: "0.8"
+      GW_ACESTEP_ROOT: "{RAIZ}/audio/motores/ace-step-src"
+  musicgen:
+    nome: MusicGen small
+    tipo: musica
+    letra: false
+    python: audio/motores/torch/.venv/bin/python
+    descricao: "Música instrumental a partir de uma descrição (melhor em inglês). Até 4 min, em blocos emendados. Medido: 10 s em ~17 s."
+    tags: [instrumental, "300M", CC-BY-NC, safetensors]

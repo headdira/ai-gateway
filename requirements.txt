@@ -1,0 +1,10 @@
+# Versões em que o gateway foi testado (Python 3.12).
+litellm[proxy]==1.106.6
+httpx==0.28.1
+PyYAML==6.0.3
+spacy==3.8.18
+numpy
+soundfile
+pytest
+# Modelo de NER em português (fora do pip normal):
+#   .venv/bin/python -m spacy download pt_core_news_md

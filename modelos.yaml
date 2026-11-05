@@ -1,0 +1,109 @@
+# Catálogo do gateway: provedores, POOL de modelos e ROTAS.
+#
+# Roteamento inteligente (gw/roteador.py): a cada pedido numa rota, o gateway
+# ordena os modelos da rota por
+#   nota de qualidade (benchmarks do catálogo Routeway → qualidade.json, ou nota manual)
+#   × velocidade medida (latência real das últimas chamadas)
+#   × confiabilidade medida (sucesso/erro), tirando quem está em espera após erro,
+#     quem estourou a cota do dia e quem não serve para o pedido
+#     (pedido com ferramenta só vai para modelo que PROVOU tool call; imagem só
+#     para visao; prompt maior que o contexto fica de fora).
+# O 1º vira o modelo; os 3 seguintes, o fallback daquele pedido.
+#
+# Perfis (peso qualidade / velocidade): qualidade 85/15, equilibrado 60/40, velocidade 25/75.
+# Fontes (03/11/2026): catálogos com chave de Routeway, NVIDIA, Groq e OpenRouter;
+# contexto e capacidades do catálogo Routeway. NVIDIA não publica o teto do tier grátis.
+
+provedores:
+  routeway:
+    prefixo: openai
+    chave: GW_ROUTEWAY_KEY
+    api_base: https://api.routeway.ai/v1
+    cadastro: https://routeway.ai/dashboard/keys
+    rpd: 200          # modelos :free, por conta
+    rpm: 5
+  nvidia:
+    prefixo: nvidia_nim
+    chave: GW_NVIDIA_KEY
+    api_base: https://integrate.api.nvidia.com/v1
+    cadastro: https://build.nvidia.com/settings/api-keys
+    rpm: 40
+    timeout: 10       # o LiteLLM repete 3x por dentro na NVIDIA: ~30 s reais
+  openrouter:
+    prefixo: openrouter
+    chave: GW_OPENROUTER_KEY
+    api_base: https://openrouter.ai/api/v1
+    cadastro: https://openrouter.ai/settings/keys
+    rpd: 50           # :free sem crédito (1.000 com US$10)
+    rpm: 20
+  groq:
+    prefixo: groq
+    chave: GW_GROQ_KEY
+    api_base: https://api.groq.com/openai/v1
+    cadastro: https://console.groq.com/keys
+    rpm: 30
+    velocidade: 0.9   # palpite inicial até medir (Groq é LPU)
+  cerebras:
+    prefixo: cerebras
+    chave: GW_CEREBRAS_KEY
+    api_base: https://api.cerebras.ai/v1
+    cadastro: https://cloud.cerebras.ai
+    rpm: 30
+    velocidade: 0.9
+  local:
+    # llamafile/servidor local já rodando; o gateway NÃO sobe modelo.
+    prefixo: openai
+    chave: null
+    api_base_env: GW_LOCAL_URL
+
+# ref = id do modelo no catálogo Routeway, de onde vem a nota (atualizar_qualidade.py).
+# nota = nota manual 0-100 para modelo fora do catálogo.
+# tools/visao: o que o modelo diz suportar; tool call só conta depois de PROVADA
+# na sondagem (testar_provedores.py --sondar), que grava em logs/saude.json.
+pool:
+  # --- DeepSeek V4.1 Flash
+  - {provedor: routeway, id: "deepseek-v4.1-flash:free", ref: deepseek-v4.1-flash, contexto: 42000, timeout: 20}
+  - {provedor: nvidia, id: "deepseek-ai/deepseek-v4.1-flash", ref: deepseek-v4.1-flash, contexto: 1048576}
+  # --- fortes de graça na NVIDIA
+  - {provedor: nvidia, id: "z-ai/glm-5.3-flash", ref: glm-5.3-flash, contexto: 1000000, visao: true}
+  # Kimi K2.6: está no catálogo da NVIDIA mas dá 404 ao chamar (sondagem 03/11)
+  # - {provedor: nvidia, id: "moonshotai/kimi-k2.6", ref: kimi-k2.6, contexto: 1000000, visao: true}
+  - {provedor: nvidia, id: "minimaxai/minimax-m3.1-flash", ref: minimax-m3.1-flash, contexto: 1048576, visao: true}
+  - {provedor: nvidia, id: "nvidia/nemotron-3-ultra-550b-a55b", ref: nemotron-3-ultra-550b-a55b, contexto: 1000000}
+  - {provedor: nvidia, id: "nvidia/nemotron-3.5-lightning-30b-a3b", nota: 35, contexto: 1000000}
+  - {provedor: nvidia, id: "nvidia/nemotron-3.5-super-vl-120b-a12b", nota: 45, contexto: 1000000, visao: true}
+  - {provedor: nvidia, id: "google/gemma-4-31b-it", ref: gemma-4-31b-it, contexto: 262144, visao: true}
+  # --- Routeway :free
+  - {provedor: routeway, id: "minimax-m3.1-flash:free", ref: minimax-m3.1-flash, contexto: 42000}
+  - {provedor: routeway, id: "muse-glimmer-30b:free", ref: muse-glimmer-30b, contexto: 131072, visao: true}
+  # --- Groq (rápidos)
+  - {provedor: groq, id: "openai/gpt-oss-120b", ref: gpt-oss-120b, contexto: 131072, rpd: 1000}
+  - {provedor: groq, id: "qwen/qwen3.8-27b", ref: qwen3.8-27b, contexto: 131072, rpd: 1000}
+  # --- OpenRouter :free (a chave de 03/11 só enxerga estes dois)
+  - {provedor: openrouter, id: "google/gemma-4-31b-it:free", ref: gemma-4-31b-it, contexto: 262144, visao: true}
+  - {provedor: openrouter, id: "cohere/north-mini-code:free", ref: north-mini-code, contexto: 256000}
+  # --- Cerebras (entra quando tiver chave)
+  - {provedor: cerebras, id: "gpt-oss-120b", ref: gpt-oss-120b, contexto: 131072}
+  # --- local (opcional)
+  - {provedor: local, id_env: GW_LOCAL_MODELO, nota: 20, contexto: 32768}
+
+# Rotas que os agentes chamam no campo "model".
+# reserva: se os modelos da rota estiverem fora ou não completarem a fila, entram os
+# melhores desta outra rota (com as mesmas regras de imagem/ferramenta/contexto).
+#
+# contexto_anunciado: tamanho que o GET /v1/models mostra para a rota. O agente (Hermes)
+# lê esse número no começo da sessão e resume a conversa ao chegar perto dele (o Hermes
+# com compression.threshold 0.5 resume na metade). 131k = janela dos rápidos bons (Groq,
+# Muse), então a conversa resumida cabe neles. Sem o campo, vale o maior modelo da rota.
+# Se mesmo assim nenhum modelo couber o pedido, o gateway devolve 400
+# "context length exceeded" (code context_length_exceeded) e o Hermes resume e repete.
+rotas:
+  geral: {perfil: equilibrado, contexto_anunciado: 131072}   # padrão dos agentes
+  rapido: {perfil: velocidade, reserva: geral, contexto_anunciado: 131072}
+  deepseek: {perfil: qualidade, ref_contem: deepseek, reserva: geral, contexto_anunciado: 131072}
+  contexto-longo: {perfil: qualidade, contexto_min: 250000, reserva: geral}
+  visao: {perfil: qualidade, visao: true, reserva: geral, contexto_anunciado: 131072}   # imagem exige GW_IMAGENS=permitir
+  local: {perfil: qualidade, provedor: local}
+
+# Quantos modelos vão de fallback em cada pedido (além do escolhido).
+fallbacks_por_pedido: 3

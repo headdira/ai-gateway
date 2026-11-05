@@ -1,0 +1,10 @@
+# Termos que NUNCA são mascarados (um por linha, sem diferenciar maiúscula).
+# Use para nomes de produto/sistema que o NER confunde com pessoa.
+# Termos só seus: permitidos.local.txt (fora do git), lido junto com este.
+Hermes
+Claude
+DeepSeek
+Gemma
+Nemotron
+Routeway
+OpenRouter
